@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ລະບົບຈັດການລາຍການສັ່ງຊື້ ແລະ ຄິດໄລ່ກໍາໄລ (Order & Profit Management System)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans Lao', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-200 flex items-center justify-center">
+                    <i class="fa-solid fa-boxes-packing text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">OrderFlow Lao</h1>
+                    <p class="text-xs text-slate-500">ລະບົບຈັດການລາຍການສັ່ງຊື້, ຄິດໄລ່ຕົ້ນທຶນ ແລະ ກໍາໄລອັດໂນມັດ</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="importLocalBtn" onclick="importLocalOrders()" class="hidden bg-amber-50 hover:bg-amber-100 text-amber-700 font-medium px-3 py-2 rounded-xl text-xs transition-all">ນຳເຂົ້າຂໍ້ມູນເກົ່າ</button>
+                <button onclick="signOut()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium px-3 py-2 rounded-xl text-xs transition-all">ອອກຈາກລະບົບ</button>
+                <button onclick="createNewOrder()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-xs sm:text-sm transition-all shadow-sm hover:shadow-indigo-200 active:scale-95">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span>ເພີ່ມອໍເດີໃໝ່</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ຍອດຂາຍລວມ</p>
+                    <h3 id="statTotalSales" class="text-lg sm:text-xl font-bold text-slate-900 mt-1">₭ 0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ຕົ້ນທຶນລວມ</p>
+                    <h3 id="statTotalCost" class="text-lg sm:text-xl font-bold text-amber-600 mt-1">₭ 0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ຄ່າຈັດສົ່ງລວມ</p>
+                    <h3 id="statTotalShipping" class="text-lg sm:text-xl font-bold text-purple-600 mt-1">₭ 0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ກໍາໄລສຸດທິລວມ</p>
+                    <h3 id="statTotalProfit" class="text-lg sm:text-xl font-bold text-emerald-600 mt-1">₭ 0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="relative w-full md:w-80">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                <input type="text" id="searchInput" oninput="renderOrders()" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ, ຫຼື ລະຫັດອໍເດີ..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">ສະຖານະ:</span>
+                <button onclick="setFilter('All')" id="filter-All" class="filter-btn active bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ທັງໝົດ</button>
+                <button onclick="setFilter('Pending')" id="filter-Pending" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ລໍຖ້າດໍາເນີນການ</button>
+                <button onclick="setFilter('Processing')" id="filter-Processing" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ກໍາລັງດໍາເນີນການ</button>
+                <button onclick="setFilter('Completed')" id="filter-Completed" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ສໍາເລັດແລ້ວ</button>
+                <button onclick="setFilter('Cancelled')" id="filter-Cancelled" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ຍົກເລີກ</button>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-[11px] sm:text-xs uppercase tracking-wider">
+                            <th class="p-4">ລະຫັດອໍເດີ</th>
+                            <th class="p-4">ຊື່ລູກຄ້າ</th>
+                            <th class="p-4">ລາຍການ</th>
+                            <th class="p-4 text-right">ຍອດຂາຍ</th>
+                            <th class="p-4 text-right">ຕົ້ນທຶນ</th>
+                            <th class="p-4 text-right">ຄ່າຈັດສົ່ງ</th>
+                            <th class="p-4 text-right">ກໍາໄລສຸດທິ</th>
+                            <th class="p-4 text-center">ສະຖານະ</th>
+                            <th class="p-4 text-center">ຈັດການ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="hidden flex-1 flex flex-col items-center justify-center p-12 text-center">
+                <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3 text-xl">
+                    <i class="fa-solid fa-inbox"></i>
+                </div>
+                <h3 class="text-sm font-medium text-slate-700">ບໍ່ພົບຂໍ້ມູນລາຍການສັ່ງຊື້</h3>
+                <p class="text-xs text-slate-400 mt-1 max-w-xs">ລອງຄົ້ນຫາດ້ວຍຄໍາອື່ນ ຫຼື ກົດປຸ່ມດ້ານລຸ່ມເພື່ອເພີ່ມອໍເດີໃໝ່</p>
+                <button onclick="createNewOrder()" class="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl text-xs transition-all">
+                    + ເພີ່ມອໍເດີໃໝ່
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Edit / Create Modal -->
+    <div id="orderModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden animate-fade-in">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+
+            <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-100 text-indigo-600 w-9 h-9 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalTitle" class="text-sm sm:text-base font-bold text-slate-800">ແກ້ໄຂອໍເດີ #ORD-XXXX</h2>
+                        <div class="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                            <span id="saveBadgeIcon" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span id="saveBadgeText" class="text-[11px] font-medium text-slate-500">ພ້ອມໃຊ້ງານ</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="promptDeleteCurrentOrder()" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span class="hidden sm:inline">ລຶບອໍເດີນີ້</span>
+                    </button>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-xl transition-all flex items-center justify-center">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">ຊື່ລູກຄ້າ <span class="text-rose-500">*</span></label>
+                        <input type="text" id="editCustomerName" oninput="handleAutoSave()" placeholder="ຊື່ ແລະ ນາມສະກຸນ" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">ເບີໂທລະສັບ</label>
+                        <input type="text" id="editCustomerPhone" oninput="handleAutoSave()" placeholder="020-XXXX-XXXX" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">ສະຖານະ</label>
+                        <select id="editOrderStatus" onchange="handleAutoSave()" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all bg-white">
+                            <option value="Pending">🟡 ລໍຖ້າດໍາເນີນການ (Pending)</option>
+                            <option value="Processing">🔵 ກໍາລັງດໍາເນີນການ (Processing)</option>
+                            <option value="Completed">🟢 ສໍາເລັດແລ້ວ (Completed)</option>
+                            <option value="Cancelled">🔴 ຍົກເລີກ (Cancelled)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2.5">
+                        <label class="block font-semibold text-slate-700">ລາຍການສິນຄ້າ ແລະ ຕົ້ນທຶນ (Items & Cost)</label>
+                        <button onclick="addOrderItem()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> ເພີ່ມສິນຄ້າ
+                        </button>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold">
+                                <tr>
+                                    <th class="p-2.5">ຊື່ສິນຄ້າ</th>
+                                    <th class="p-2.5 w-20 text-center">ຈໍານວນ</th>
+                                    <th class="p-2.5 w-28 text-right">ຕົ້ນທຶນ/ຊິ້ນ (₭)</th>
+                                    <th class="p-2.5 w-28 text-right">ລາຄາຂາຍ/ຊິ້ນ (₭)</th>
+                                    <th class="p-2.5 w-28 text-right">ລວມຂາຍ (₭)</th>
+                                    <th class="p-2.5 w-10 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalItemsBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">ຄ່າຈັດສົ່ງ (₭)</label>
+                            <input type="number" min="0" id="editShippingFee" oninput="handleAutoSave()" placeholder="0" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                            <p class="text-[11px] text-slate-400 mt-1">ຄ່າຈັດສົ່ງທີ່ຈ່າຍໃຫ້ຂົນສົ່ງ ຈະຖືກຫັກອອກຈາກກໍາໄລ</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 text-white p-4 rounded-xl shadow-inner flex flex-col justify-between gap-2">
+                        <div class="flex justify-between items-center text-xs text-slate-300">
+                            <span>ຍອດຂາຍສິນຄ້າລວມ:</span>
+                            <span id="summarySalesText" class="font-bold">₭ 0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-amber-300">
+                            <span>ຕົ້ນທຶນສິນຄ້າລວມ:</span>
+                            <span id="summaryCostText" class="font-bold">₭ 0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-purple-300">
+                            <span>ຄ່າຈັດສົ່ງ:</span>
+                            <span id="summaryShippingText" class="font-bold">₭ 0</span>
+                        </div>
+                        <hr class="border-slate-800 my-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-200">ກໍາໄລສຸດທິ (Net Profit):</span>
+                            <span id="summaryProfitText" class="text-base sm:text-lg font-extrabold text-emerald-400">₭ 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">ທີ່ຢູ່ຈັດສົ່ງ</label>
+                        <textarea id="editCustomerAddress" oninput="handleAutoSave()" rows="2" placeholder="ລະບຸທີ່ຢູ່ຈັດສົ່ງ..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">ໝາຍເຫດ</label>
+                        <textarea id="editOrderNotes" oninput="handleAutoSave()" rows="2" placeholder="ໝາຍເຫດເພີ່ມເຕີມ..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt text-amber-500"></i>
+                    ລະບົບບັນທຶກອັດໂນມັດ Real-time
+                </span>
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-5 py-2 rounded-xl transition-all shadow-sm">
+                    ປິດໜ້າຕ່າງ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-fade-in">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center space-y-4">
+            <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900">ຢືນຢັນການລຶບອໍເດີ?</h3>
+                <p class="text-xs text-slate-500 mt-1">ທ່ານຕັ້ງໃຈຈະລຶບອໍເດີ <span id="deleteTargetId" class="font-bold text-slate-800">#ORD-XXXX</span> ແທ້ບໍ? ຂໍ້ມູນທີ່ລຶບແລ້ວບໍ່ສາມາດກູ້ຄືນໄດ້.</p>
+            </div>
+            <div class="flex items-center justify-center gap-3 pt-2">
+                <button onclick="closeDeleteModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-xl text-xs transition-all">ຍົກເລີກ</button>
+                <button onclick="confirmDeleteOrder()" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 rounded-xl text-xs transition-all shadow-sm shadow-rose-200">ລຶບອໍເດີ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login -->
+    <div id="loginOverlay" class="fixed inset-0 z-[70] bg-slate-100 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-200 p-6 space-y-4">
+            <div class="text-center">
+                <div class="bg-indigo-600 text-white w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-boxes-packing text-xl"></i></div>
+                <h2 class="text-base font-bold text-slate-900">ເຂົ້າສູ່ລະບົບ</h2>
+                <p class="text-xs text-slate-500 mt-1">OrderFlow Lao</p>
+            </div>
+            <input type="email" id="loginEmail" placeholder="ອີເມວ" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <input type="password" id="loginPassword" placeholder="ລະຫັດຜ່ານ" onkeydown="if(event.key==='Enter')signIn()" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <p id="loginError" class="text-xs text-rose-600 hidden"></p>
+            <button onclick="signIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-xl text-sm transition-all">ເຂົ້າສູ່ລະບົບ</button>
+        </div>
+    </div>
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] bg-rose-600 text-white text-xs px-4 py-2 rounded-xl shadow-lg hidden"></div>
+
+    <script>
+        const SAMPLE_ORDERS = [
+            {
+                id: "ORD-9021",
+                customerName: "ສົມຊາຍ ໃຈດີ",
+                customerPhone: "020-5551-2345",
+                address: "ບ້ານ ໂພນໄຊ, ເມືອງ ໄຊເສດຖາ, ນະຄອນຫຼວງວຽງຈັນ",
+                status: "Pending",
+                shippingFee: 20000,
+                createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+                notes: "ຂໍໃບເກັບເງິນນໍາ",
+                items: [
+                    { id: 1, name: "ເສື້ອຢືດ Cotton Premium", quantity: 2, cost: 80000, price: 150000 },
+                    { id: 2, name: "ໂສ້ງ Jeans Fashion", quantity: 1, cost: 200000, price: 350000 }
+                ]
+            },
+            {
+                id: "ORD-8812",
+                customerName: "ມະລີວອນ ພົມມະວົງ",
+                customerPhone: "020-9988-7766",
+                address: "ບ້ານ ທົ່ງຂັນຄໍາ, ເມືອງ ຈັນທະບູລີ, ນະຄອນຫຼວງວຽງຈັນ",
+                status: "Processing",
+                shippingFee: 15000,
+                createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+                notes: "ສົ່ງຕອນບ່າຍ",
+                items: [
+                    { id: 1, name: "ຫູຟັງໄຮ້ສາຍ Bluetooth 5.3", quantity: 1, cost: 250000, price: 420000 }
+                ]
+            },
+            {
+                id: "ORD-7540",
+                customerName: "ອານຸສອນ ວົງສະຫວ່າງ",
+                customerPhone: "020-2233-4455",
+                address: "ບ້ານ ໂພນໂຮງ, ເມືອງ ໂພນໂຮງ, ແຂວງ ວຽງຈັນ",
+                status: "Completed",
+                shippingFee: 30000,
+                createdAt: new Date(Date.now() - 1000 * 60 * 1440 * 2).toISOString(),
+                notes: "ໂອນເງິນແລ້ວ",
+                items: [
+                    { id: 1, name: "ກະຕຸກນໍ້າເຢັນ Vacuum 1L", quantity: 3, cost: 60000, price: 120000 },
+                    { id: 2, name: "ກະເປົາເປ້ Backpack 30L", quantity: 1, cost: 350000, price: 580000 }
+                ]
+            }
+        ];
+
+        const STORAGE_KEY = 'lao_order_management_v2';
+        const STATUS_LABELS = { Pending: 'ລໍຖ້າດໍາເນີນການ' };
+
+        let orders = [];
+        let activeFilter = "All";
+        let currentEditingOrderId = null;
+        let pendingDeleteOrderId = null;
+        let autoSaveTimer = null;
+
+        // ---------- Supabase ----------
+        const SUPABASE_URL = 'https://tcdrbajzopirxtkfhtsp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_5bkb2MakZLOKOPnyO2lTWQ_yexhHX4G';
+        let db = null;
+        const CONFIG_MSG = 'ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ SUPABASE_URL / SUPABASE_ANON_KEY ຫຼື ໂຫຼດ Supabase ບໍ່ໄດ້';
+        try {
+            if (!SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.startsWith('YOUR_') && window.supabase) {
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) { console.error('Supabase init failed', e); }
+        let currentUser = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!db) { showLogin(CONFIG_MSG); return; }
+            const { data } = await db.auth.getSession();
+            if (data && data.session) await onSignedIn(data.session.user);
+            else showLogin();
+        });
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 4000);
+        }
+
+        function showLogin(msg) {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            const err = document.getElementById('loginError');
+            err.textContent = msg || '';
+            err.classList.toggle('hidden', !msg);
+        }
+
+        async function signIn() {
+            if (!db) { showLogin(CONFIG_MSG); return; }
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
+            if (error) { showLogin('ເຂົ້າສູ່ລະບົບບໍ່ສໍາເລັດ: ' + error.message); return; }
+            document.getElementById('loginPassword').value = '';
+            await onSignedIn(data.user);
+        }
+
+        async function signOut() {
+            if (db) await db.auth.signOut();
+            currentUser = null;
+            orders = [];
+            renderOrders();
+            showLogin();
+        }
+
+        async function onSignedIn(user) {
+            currentUser = user;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            await loadOrders();
+            renderOrders();
+            document.getElementById('importLocalBtn').classList.toggle('hidden', getLocalOrders().length === 0);
+        }
+
+        async function loadOrders() {
+            const { data, error } = await db.from('lao_orders').select('data').order('created_at', { ascending: false });
+            if (error) { showToast('ໂຫຼດຂໍ້ມູນບໍ່ສໍາເລັດ: ' + error.message); orders = []; return; }
+            orders = data.map(r => r.data);
+        }
+
+        async function saveOrder(order) {
+            if (!currentUser) return false;
+            const { error } = await db.from('lao_orders').upsert(
+                { id: order.id, user_id: currentUser.id, data: order },
+                { onConflict: 'user_id,id' }
+            );
+            if (error) { showToast('ບັນທຶກບໍ່ສໍາເລັດ: ' + error.message); return false; }
+            return true;
+        }
+
+        async function deleteOrderRemote(id) {
+            const { error } = await db.from('lao_orders').delete().eq('id', id);
+            if (error) showToast('ລຶບບໍ່ສໍາເລັດ: ' + error.message);
+        }
+
+        // Import old data saved in this browser (localStorage)
+        function getLocalOrders() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) { return []; }
+        }
+
+        async function importLocalOrders() {
+            const rows = getLocalOrders()
+                .filter(o => o && o.id && !orders.some(x => x.id === o.id))
+                .map(o => ({ id: o.id, user_id: currentUser.id, data: o }));
+            if (rows.length === 0) { showToast('ບໍ່ມີຂໍ້ມູນໃຫ້ນໍາເຂົ້າ'); return; }
+            if (!confirm(`ນໍາເຂົ້າ ${rows.length} ອໍເດີຈາກເບຣາວເຊີນີ້?`)) return;
+            const { error } = await db.from('lao_orders').upsert(rows, { onConflict: 'user_id,id' });
+            if (error) { showToast('ນໍາເຂົ້າບໍ່ສໍາເລັດ: ' + error.message); return; }
+            await loadOrders();
+            renderOrders();
+            document.getElementById('importLocalBtn').classList.add('hidden');
+        }
+
+                // ---------- Calculations ----------
+        function calculateOrderSales(order) {
+            if (!order || !order.items) return 0;
+            return order.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.price) || 0), 0);
+        }
+
+        function calculateOrderCost(order) {
+            if (!order || !order.items) return 0;
+            return order.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.cost) || 0), 0);
+        }
+
+        // Net profit = sales - product cost - shipping fee
+        function calculateOrderProfit(order, shippingOverride) {
+            const shipping = shippingOverride !== undefined ? shippingOverride : (Number(order.shippingFee) || 0);
+            return calculateOrderSales(order) - calculateOrderCost(order) - shipping;
+        }
+
+        const fmt = n => Number(n).toLocaleString('lo-LA');
+
+        // ---------- Rendering ----------
+        function renderOrders() {
+            const tbody = document.getElementById('orderTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            const filteredOrders = orders.filter(order => {
+                const matchesFilter = activeFilter === 'All' || order.status === activeFilter;
+                const matchesSearch = order.id.toLowerCase().includes(searchVal) ||
+                    (order.customerName && order.customerName.toLowerCase().includes(searchVal)) ||
+                    (order.customerPhone && order.customerPhone.toLowerCase().includes(searchVal));
+                return matchesFilter && matchesSearch;
+            });
+
+            calculateDashboardTotals();
+
+            if (filteredOrders.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = filteredOrders.map(order => {
+                const salesTotal = calculateOrderSales(order);
+                const costTotal = calculateOrderCost(order);
+                const shipping = Number(order.shippingFee) || 0;
+                const netProfit = calculateOrderProfit(order);
+
+                const itemCount = (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+                const formattedDate = new Date(order.createdAt).toLocaleString('lo-LA', { dateStyle: 'short', timeStyle: 'short' });
+                const itemsText = (order.items || []).map(i => `${i.name} (x${i.quantity})`).join(', ');
+
+                const profitClass = netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                const profitSign = netProfit >= 0 ? '+' : '';
+                const idAttr = escapeHtml(order.id);
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition-colors ${order.status === 'Cancelled' ? 'opacity-60' : ''}">
+                        <td class="p-4">
+                            <div class="font-mono font-bold text-indigo-600">${idAttr}</div>
+                            <div class="text-[11px] text-slate-400">${escapeHtml(formattedDate)}</div>
+                        </td>
+                        <td class="p-4">
+                            <div class="font-semibold text-slate-800">${escapeHtml(order.customerName || 'ບໍ່ລະບຸຊື່')}</div>
+                            <div class="text-[11px] text-slate-400">${escapeHtml(order.customerPhone || 'ບໍ່ລະບຸເບີໂທ')}</div>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-xs text-slate-700 font-medium">${itemCount} ລາຍການ</div>
+                            <div class="text-[11px] text-slate-400 truncate max-w-[180px]" title="${escapeHtml(itemsText)}">${escapeHtml(itemsText)}</div>
+                        </td>
+                        <td class="p-4 text-right font-bold text-slate-800 whitespace-nowrap">₭ ${fmt(salesTotal)}</td>
+                        <td class="p-4 text-right text-amber-600 font-medium whitespace-nowrap">₭ ${fmt(costTotal)}</td>
+                        <td class="p-4 text-right text-purple-600 font-medium whitespace-nowrap">₭ ${fmt(shipping)}</td>
+                        <td class="p-4 text-right font-extrabold whitespace-nowrap ${profitClass}">${profitSign}₭ ${fmt(netProfit)}</td>
+                        <td class="p-4 text-center">${getStatusBadgeHTML(order.status)}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="openEditModal('${idAttr}')" title="ແກ້ໄຂ" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all flex items-center gap-1">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                    <span class="text-xs hidden sm:inline">ແກ້ໄຂ</span>
+                                </button>
+                                <button onclick="promptDeleteOrder('${idAttr}')" title="ລຶບ" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-all flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                    <span class="text-xs hidden sm:inline">ລຶບ</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Dashboard totals exclude cancelled orders
+        function calculateDashboardTotals() {
+            let totalSales = 0, totalCost = 0, totalShipping = 0;
+
+            orders.forEach(order => {
+                if (order.status === 'Cancelled') return;
+                totalSales += calculateOrderSales(order);
+                totalCost += calculateOrderCost(order);
+                totalShipping += Number(order.shippingFee) || 0;
+            });
+
+            const totalProfit = totalSales - totalCost - totalShipping;
+
+            document.getElementById('statTotalSales').textContent = `₭ ${fmt(totalSales)}`;
+            document.getElementById('statTotalCost').textContent = `₭ ${fmt(totalCost)}`;
+            document.getElementById('statTotalShipping').textContent = `₭ ${fmt(totalShipping)}`;
+
+            const profitEl = document.getElementById('statTotalProfit');
+            profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}₭ ${fmt(totalProfit)}`;
+            profitEl.className = `text-lg sm:text-xl font-bold mt-1 ${totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+        }
+
+        function getStatusBadgeHTML(status) {
+            const badges = {
+                'Pending': '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> ລໍຖ້າດໍາເນີນການ</span>',
+                'Processing': '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> ກໍາລັງດໍາເນີນການ</span>',
+                'Completed': '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ສໍາເລັດແລ້ວ</span>',
+                'Cancelled': '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ຍົກເລີກ</span>'
+            };
+            return badges[status] || badges['Pending'];
+        }
+
+        function setFilter(status) {
+            activeFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById(`filter-${status}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+                activeBtn.classList.add('bg-slate-900', 'text-white');
+            }
+            renderOrders();
+        }
+
+        // ---------- Modal ----------
+        function openEditModal(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            currentEditingOrderId = orderId;
+            document.getElementById('modalTitle').textContent = `ແກ້ໄຂອໍເດີ #${order.id}`;
+            document.getElementById('editCustomerName').value = order.customerName || '';
+            document.getElementById('editCustomerPhone').value = order.customerPhone || '';
+            document.getElementById('editCustomerAddress').value = order.address || '';
+            document.getElementById('editOrderStatus').value = order.status || 'Pending';
+            document.getElementById('editShippingFee').value = order.shippingFee !== undefined ? order.shippingFee : 0;
+            document.getElementById('editOrderNotes').value = order.notes || '';
+
+            renderModalItems(order.items || []);
+            updateAutoSaveStatus('saved', 'ຂໍ້ມູນຫຼ້າສຸດຖືກບັນທຶກແລ້ວ');
+
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        function generateOrderId() {
+            let id;
+            do {
+                id = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+            } while (orders.some(o => o.id === id));
+            return id;
+        }
+
+        function createNewOrder() {
+            if (!currentUser) { showToast('ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'); showLogin(); return; }
+            const newId = generateOrderId();
+            const newOrder = {
+                id: newId,
+                customerName: "ລູກຄ້າໃໝ່",
+                customerPhone: "",
+                address: "",
+                status: "Pending",
+                shippingFee: 0,
+                createdAt: new Date().toISOString(),
+                notes: "",
+                items: [
+                    { id: Date.now(), name: "ສິນຄ້າຕົວຢ່າງ", quantity: 1, cost: 30000, price: 50000 }
+                ]
+            };
+
+            orders.unshift(newOrder);
+            saveOrder(newOrder);
+            renderOrders();
+            openEditModal(newId);
+        }
+
+        // Full render of item rows (only on open / add / remove)
+        function renderModalItems(items) {
+            const itemsBody = document.getElementById('modalItemsBody');
+
+            if (!items || items.length === 0) {
+                itemsBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-4 text-center text-slate-400">ບໍ່ມີລາຍການສິນຄ້າ ກົດ "+ ເພີ່ມສິນຄ້າ" ເພື່ອເພີ່ມລາຍການ</td>
+                    </tr>`;
+                updateModalCalculations();
+                return;
+            }
+
+            itemsBody.innerHTML = items.map((item, index) => {
+                const lineSales = (Number(item.quantity) || 0) * (Number(item.price) || 0);
+                return `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="p-2">
+                            <input type="text" value="${escapeHtml(item.name)}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="ຊື່ສິນຄ້າ" class="w-full min-w-[120px] px-2 py-1 border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="number" min="1" value="${item.quantity}" oninput="updateItemField(${index}, 'quantity', this.value)" class="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </td>
+                        <td class="p-2 text-right">
+                            <input type="number" min="0" value="${item.cost}" oninput="updateItemField(${index}, 'cost', this.value)" class="w-24 px-2 py-1 border border-slate-200 rounded-lg text-right focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </td>
+                        <td class="p-2 text-right">
+                            <input type="number" min="0" value="${item.price}" oninput="updateItemField(${index}, 'price', this.value)" class="w-24 px-2 py-1 border border-slate-200 rounded-lg text-right focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </td>
+                        <td id="lineTotal-${index}" class="p-2 text-right font-medium text-slate-700 whitespace-nowrap">₭ ${fmt(lineSales)}</td>
+                        <td class="p-2 text-center">
+                            <button onclick="removeOrderItem(${index})" title="ລຶບລາຍການນີ້" class="text-slate-300 hover:text-rose-500 p-1 transition-colors">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            updateModalCalculations();
+        }
+
+        // Update one field WITHOUT re-rendering inputs (keeps cursor focus)
+        function updateItemField(index, key, value) {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order || !order.items[index]) return;
+
+            const item = order.items[index];
+            if (key === 'quantity' || key === 'price' || key === 'cost') {
+                item[key] = Math.max(0, parseFloat(value) || 0);
+            } else {
+                item[key] = value;
+            }
+
+            const lineEl = document.getElementById(`lineTotal-${index}`);
+            if (lineEl) {
+                lineEl.textContent = `₭ ${fmt((Number(item.quantity) || 0) * (Number(item.price) || 0))}`;
+            }
+
+            handleAutoSave();
+        }
+
+        function addOrderItem() {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order) return;
+
+            order.items.push({ id: Date.now(), name: "ສິນຄ້າໃໝ່", quantity: 1, cost: 0, price: 0 });
+            renderModalItems(order.items);
+            handleAutoSave();
+        }
+
+        function removeOrderItem(index) {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order) return;
+
+            order.items.splice(index, 1);
+            renderModalItems(order.items);
+            handleAutoSave();
+        }
+
+        function updateModalCalculations() {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order) return;
+
+            const salesTotal = calculateOrderSales(order);
+            const costTotal = calculateOrderCost(order);
+            const shippingFee = Math.max(0, Number(document.getElementById('editShippingFee').value) || 0);
+            const netProfit = calculateOrderProfit(order, shippingFee);
+
+            document.getElementById('summarySalesText').textContent = `₭ ${fmt(salesTotal)}`;
+            document.getElementById('summaryCostText').textContent = `₭ ${fmt(costTotal)}`;
+            document.getElementById('summaryShippingText').textContent = `₭ ${fmt(shippingFee)}`;
+
+            const profitEl = document.getElementById('summaryProfitText');
+            profitEl.textContent = `${netProfit >= 0 ? '+' : ''}₭ ${fmt(netProfit)}`;
+            profitEl.className = `text-base sm:text-lg font-extrabold ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        // ---------- Auto-save (debounced) ----------
+        function handleAutoSave() {
+            if (!currentEditingOrderId) return;
+
+            updateModalCalculations();
+            updateAutoSaveStatus('saving', 'ກໍາລັງບັນທຶກອັດໂນມັດ...');
+
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                autoSaveTimer = null;
+                executeSave();
+            }, 400);
+        }
+
+        async function executeSave() {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order) return;
+
+            order.customerName = document.getElementById('editCustomerName').value;
+            order.customerPhone = document.getElementById('editCustomerPhone').value;
+            order.address = document.getElementById('editCustomerAddress').value;
+            order.status = document.getElementById('editOrderStatus').value;
+            order.shippingFee = Math.max(0, parseFloat(document.getElementById('editShippingFee').value) || 0);
+            order.notes = document.getElementById('editOrderNotes').value;
+
+            renderOrders();
+            const ok = await saveOrder(order);
+            if (!ok) { updateAutoSaveStatus('error', 'ບັນທຶກບໍ່ສໍາເລັດ'); return; }
+
+            const timeString = new Date().toLocaleTimeString('lo-LA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            updateAutoSaveStatus('saved', `ບັນທຶກອັດໂນມັດແລ້ວເມື່ອ ${timeString}`);
+        }
+
+        function updateAutoSaveStatus(state, message) {
+            const badgeIcon = document.getElementById('saveBadgeIcon');
+            const badgeText = document.getElementById('saveBadgeText');
+
+            if (state === 'saving') {
+                badgeIcon.className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
+                badgeText.className = 'text-[11px] font-medium text-amber-600';
+            } else if (state === 'error') {
+                badgeIcon.className = 'w-2 h-2 rounded-full bg-rose-500';
+                badgeText.className = 'text-[11px] font-medium text-rose-600';
+            } else {
+                badgeIcon.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                badgeText.className = 'text-[11px] font-medium text-emerald-600';
+            }
+            badgeText.textContent = message;
+        }
+
+        // ---------- Delete ----------
+        function promptDeleteOrder(orderId) {
+            pendingDeleteOrderId = orderId;
+            document.getElementById('deleteTargetId').textContent = `#${orderId}`;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function promptDeleteCurrentOrder() {
+            if (currentEditingOrderId) promptDeleteOrder(currentEditingOrderId);
+        }
+
+        function confirmDeleteOrder() {
+            if (!pendingDeleteOrderId) return;
+
+            const deletingEditedOrder = currentEditingOrderId === pendingDeleteOrderId;
+            if (deletingEditedOrder) {
+                // Stop pending auto-save so it can't touch the deleted order
+                if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+                document.getElementById('orderModal').classList.add('hidden');
+                currentEditingOrderId = null;
+            }
+
+            const delId = pendingDeleteOrderId;
+            orders = orders.filter(o => o.id !== delId);
+            deleteOrderRemote(delId);
+            renderOrders();
+            closeDeleteModal();
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            pendingDeleteOrderId = null;
+        }
+
+        function closeModal() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+                executeSave();
+            }
+            document.getElementById('orderModal').classList.add('hidden');
+            currentEditingOrderId = null;
+        }
+
+        function escapeHtml(value) {
+            if (value === undefined || value === null) return '';
+            return String(value).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[m]));
+        }
+    </script>
+</body>
+</html>
