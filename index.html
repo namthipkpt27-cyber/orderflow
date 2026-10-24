@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="lo">
-<head>
+<head>u
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ລະບົບຈັດການລາຍການສັ່ງຊື້ ແລະ ຄິດໄລ່ກໍາໄລ (Order & Profit Management System)</title>
@@ -47,6 +47,7 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
 
+        <!-- Stat Cards -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
@@ -86,12 +87,36 @@
             </div>
         </section>
 
-        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div class="relative w-full md:w-80">
-                <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
-                <input type="text" id="searchInput" oninput="renderOrders()" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ, ຫຼື ລະຫັດອໍເດີ..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+        <!-- Search, Date Filter & Status Filters -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row gap-3 justify-between items-center">
+                <!-- Search -->
+                <div class="relative w-full md:w-72">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="renderOrders()" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ, ລະຫັດອໍເດີ..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <div class="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                        <i class="fa-solid fa-calendar-days text-indigo-600"></i>
+                        <span>ຈາກວັນທີ:</span>
+                    </div>
+                    <input type="date" id="startDate" onchange="renderOrders()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    
+                    <div class="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                        <span>ເຖິງ:</span>
+                    </div>
+                    <input type="date" id="endDate" onchange="renderOrders()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+
+                    <button onclick="clearDateFilter()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-all">
+                        ລ້າງວັນທີ
+                    </button>
+                </div>
             </div>
-            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+
+            <!-- Status Tabs -->
+            <div class="flex items-center gap-2 w-full overflow-x-auto pb-1 pt-2 border-t border-slate-100">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">ສະຖານະ:</span>
                 <button onclick="setFilter('All')" id="filter-All" class="filter-btn active bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ທັງໝົດ</button>
                 <button onclick="setFilter('Pending')" id="filter-Pending" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap">ລໍຖ້າດໍາເນີນການ</button>
@@ -101,13 +126,14 @@
             </div>
         </section>
 
+        <!-- Orders Table -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-[11px] sm:text-xs uppercase tracking-wider">
                             <th class="p-4">ລະຫັດອໍເດີ</th>
-                            <th class="p-4">ຊື່ລູກຄ້າ</th>
+                            <th class="p-4">ຊື່ລູກຄ້າ & WhatsApp</th>
                             <th class="p-4">ລາຍການ</th>
                             <th class="p-4 text-right">ຍອດຂາຍ</th>
                             <th class="p-4 text-right">ຕົ້ນທຶນ</th>
@@ -126,9 +152,9 @@
                     <i class="fa-solid fa-inbox"></i>
                 </div>
                 <h3 class="text-sm font-medium text-slate-700">ບໍ່ພົບຂໍ້ມູນລາຍການສັ່ງຊື້</h3>
-                <p class="text-xs text-slate-400 mt-1 max-w-xs">ລອງຄົ້ນຫາດ້ວຍຄໍາອື່ນ ຫຼື ກົດປຸ່ມດ້ານລຸ່ມເພື່ອເພີ່ມອໍເດີໃໝ່</p>
+                <p class="text-xs text-slate-400 mt-1 max-w-xs">ລອງປ່ຽນຊ່ວງວັນທີ ຫຼື ຄົ້ນຫາດ້ວຍຄໍາອື່ນ</p>
                 <button onclick="createNewOrder()" class="mt-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl text-xs transition-all">
-                    + ເພີ່ມອໍເດີໃໝ່
+                    + ເเพີ່ມອໍເດີໃໝ່
                 </button>
             </div>
         </section>
@@ -152,6 +178,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <!-- ปุ่มส่งบิลทาง WhatsApp ใน Modal -->
+                    <button onclick="sendCurrentOrderToWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                        <span>ສົ່ງບິນ WhatsApp</span>
+                    </button>
                     <button onclick="promptDeleteCurrentOrder()" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
                         <i class="fa-solid fa-trash-can"></i>
                         <span class="hidden sm:inline">ລຶບອໍເດີນີ້</span>
@@ -169,7 +200,7 @@
                         <input type="text" id="editCustomerName" oninput="handleAutoSave()" placeholder="ຊື່ ແລະ ນາມສະກຸນ" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-600 mb-1">ເບີໂທລະສັບ</label>
+                        <label class="block font-semibold text-slate-600 mb-1">ເບີໂທລະສັບ / WhatsApp</label>
                         <input type="text" id="editCustomerPhone" oninput="handleAutoSave()" placeholder="020-XXXX-XXXX" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
@@ -295,53 +326,7 @@
     <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] bg-rose-600 text-white text-xs px-4 py-2 rounded-xl shadow-lg hidden"></div>
 
     <script>
-        const SAMPLE_ORDERS = [
-            {
-                id: "ORD-9021",
-                customerName: "ສົມຊາຍ ໃຈດີ",
-                customerPhone: "020-5551-2345",
-                address: "ບ້ານ ໂພນໄຊ, ເມືອງ ໄຊເສດຖາ, ນະຄອນຫຼວງວຽງຈັນ",
-                status: "Pending",
-                shippingFee: 20000,
-                createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-                notes: "ຂໍໃບເກັບເງິນນໍາ",
-                items: [
-                    { id: 1, name: "ເສື້ອຢືດ Cotton Premium", quantity: 2, cost: 80000, price: 150000 },
-                    { id: 2, name: "ໂສ້ງ Jeans Fashion", quantity: 1, cost: 200000, price: 350000 }
-                ]
-            },
-            {
-                id: "ORD-8812",
-                customerName: "ມະລີວອນ ພົມມະວົງ",
-                customerPhone: "020-9988-7766",
-                address: "ບ້ານ ທົ່ງຂັນຄໍາ, ເມືອງ ຈັນທະບູລີ, ນະຄອນຫຼວງວຽງຈັນ",
-                status: "Processing",
-                shippingFee: 15000,
-                createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-                notes: "ສົ່ງຕອນບ່າຍ",
-                items: [
-                    { id: 1, name: "ຫູຟັງໄຮ້ສາຍ Bluetooth 5.3", quantity: 1, cost: 250000, price: 420000 }
-                ]
-            },
-            {
-                id: "ORD-7540",
-                customerName: "ອານຸສອນ ວົງສະຫວ່າງ",
-                customerPhone: "020-2233-4455",
-                address: "ບ້ານ ໂພນໂຮງ, ເມືອງ ໂພນໂຮງ, ແຂວງ ວຽງຈັນ",
-                status: "Completed",
-                shippingFee: 30000,
-                createdAt: new Date(Date.now() - 1000 * 60 * 1440 * 2).toISOString(),
-                notes: "ໂອນເງິນແລ້ວ",
-                items: [
-                    { id: 1, name: "ກະຕຸກນໍ້າເຢັນ Vacuum 1L", quantity: 3, cost: 60000, price: 120000 },
-                    { id: 2, name: "ກະເປົາເປ້ Backpack 30L", quantity: 1, cost: 350000, price: 580000 }
-                ]
-            }
-        ];
-
         const STORAGE_KEY = 'lao_order_management_v2';
-        const STATUS_LABELS = { Pending: 'ລໍຖ້າດໍາເນີນການ' };
-
         let orders = [];
         let activeFilter = "All";
         let currentEditingOrderId = null;
@@ -428,7 +413,6 @@
             if (error) showToast('ລຶບບໍ່ສໍາເລັດ: ' + error.message);
         }
 
-        // Import old data saved in this browser (localStorage)
         function getLocalOrders() {
             try {
                 const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -449,7 +433,7 @@
             document.getElementById('importLocalBtn').classList.add('hidden');
         }
 
-                // ---------- Calculations ----------
+        // ---------- Calculations ----------
         function calculateOrderSales(order) {
             if (!order || !order.items) return 0;
             return order.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.price) || 0), 0);
@@ -460,7 +444,6 @@
             return order.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.cost) || 0), 0);
         }
 
-        // Net profit = sales - product cost - shipping fee
         function calculateOrderProfit(order, shippingOverride) {
             const shipping = shippingOverride !== undefined ? shippingOverride : (Number(order.shippingFee) || 0);
             return calculateOrderSales(order) - calculateOrderCost(order) - shipping;
@@ -468,21 +451,91 @@
 
         const fmt = n => Number(n).toLocaleString('lo-LA');
 
-        // ---------- Rendering ----------
+        // ---------- Clear Date Filter ----------
+        function clearDateFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            renderOrders();
+        }
+
+        // ---------- WhatsApp Share Helper ----------
+        function formatWhatsAppPhone(phone) {
+            let rawPhone = (phone || '').replace(/[^0-9]/g, '');
+            if (!rawPhone) return '';
+            if (rawPhone.startsWith('020')) {
+                rawPhone = '856' + rawPhone.substring(1);
+            } else if (!rawPhone.startsWith('856') && rawPhone.length >= 8) {
+                rawPhone = '856' + rawPhone;
+            }
+            return rawPhone;
+        }
+
+        function sendOrderToWhatsApp(order) {
+            const salesTotal = calculateOrderSales(order);
+            const shipping = Number(order.shippingFee) || 0;
+            const grandTotal = salesTotal + shipping;
+            const itemsListText = (order.items || []).map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} = ₭ ${fmt(i.quantity * i.price)}`).join('\n');
+
+            let message = `🛒 *ใบเสร็จรายการสั่งซื้อ / ໃບຮັບສິນຄ້າ*\n`;
+            message += `------------------------------------\n`;
+            message += `🔖 *เลขบิล:* #${order.id}\n`;
+            message += `👤 *ชื่อลูกค้า:* ${order.customerName || '-'}\n`;
+            message += `📍 *ที่อยู่:* ${order.address || '-'}\n`;
+            message += `------------------------------------\n`;
+            message += `📦 *รายการสินค้า:*\n${itemsListText}\n`;
+            message += `------------------------------------\n`;
+            message += `💵 *ยอดรวมสินค้า:* ₭ ${fmt(salesTotal)}\n`;
+            message += `🚚 *ค่าจัดส่ง:* ₭ ${fmt(shipping)}\n`;
+            message += `💰 *ยอดรวมทั้งสิ้น:* ₭ ${fmt(grandTotal)}\n`;
+            message += `------------------------------------\n`;
+            message += `🙏 *ขอบคุณที่ใช้บริการครับ/ค่ะ!*`;
+
+            const phoneFormatted = formatWhatsAppPhone(order.customerPhone);
+            let waUrl = `https://wa.me/`;
+            if (phoneFormatted) {
+                waUrl += `${phoneFormatted}?text=${encodeURIComponent(message)}`;
+            } else {
+                waUrl += `?text=${encodeURIComponent(message)}`;
+            }
+            window.open(waUrl, '_blank');
+        }
+
+        function sendCurrentOrderToWhatsApp() {
+            const order = orders.find(o => o.id === currentEditingOrderId);
+            if (!order) return;
+            // อัปเดตค่าล่าสุดจากฟอร์มก่อนส่ง
+            order.customerName = document.getElementById('editCustomerName').value;
+            order.customerPhone = document.getElementById('editCustomerPhone').value;
+            order.address = document.getElementById('editCustomerAddress').value;
+            order.shippingFee = Math.max(0, parseFloat(document.getElementById('editShippingFee').value) || 0);
+            sendOrderToWhatsApp(order);
+        }
+
+        // ---------- Rendering & Filtering ----------
         function renderOrders() {
             const tbody = document.getElementById('orderTableBody');
             const emptyState = document.getElementById('emptyState');
             const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            const startDateVal = document.getElementById('startDate').value;
+            const endDateVal = document.getElementById('endDate').value;
 
             const filteredOrders = orders.filter(order => {
                 const matchesFilter = activeFilter === 'All' || order.status === activeFilter;
                 const matchesSearch = order.id.toLowerCase().includes(searchVal) ||
                     (order.customerName && order.customerName.toLowerCase().includes(searchVal)) ||
                     (order.customerPhone && order.customerPhone.toLowerCase().includes(searchVal));
-                return matchesFilter && matchesSearch;
+                
+                let matchesDate = true;
+                if (order.createdAt) {
+                    const orderDateStr = order.createdAt.split('T')[0];
+                    if (startDateVal && orderDateStr < startDateVal) matchesDate = false;
+                    if (endDateVal && orderDateStr > endDateVal) matchesDate = false;
+                }
+
+                return matchesFilter && matchesSearch && matchesDate;
             });
 
-            calculateDashboardTotals();
+            calculateDashboardTotals(filteredOrders);
 
             if (filteredOrders.length === 0) {
                 tbody.innerHTML = '';
@@ -505,6 +558,18 @@
                 const profitSign = netProfit >= 0 ? '+' : '';
                 const idAttr = escapeHtml(order.id);
 
+                const rawPhone = formatWhatsAppPhone(order.customerPhone);
+                let waHtml = '';
+                if (order.customerPhone) {
+                    waHtml = `
+                        <a href="https://wa.me/${rawPhone}" target="_blank" title="แชท WhatsApp" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md transition-all font-medium mt-0.5">
+                            <i class="fa-brands fa-whatsapp text-xs"></i> <span>${escapeHtml(order.customerPhone)}</span>
+                        </a>
+                    `;
+                } else {
+                    waHtml = `<div class="text-[11px] text-slate-400">ບໍ່ມີເບີໂທ</div>`;
+                }
+
                 return `
                     <tr class="hover:bg-slate-50/80 transition-colors ${order.status === 'Cancelled' ? 'opacity-60' : ''}">
                         <td class="p-4">
@@ -513,7 +578,7 @@
                         </td>
                         <td class="p-4">
                             <div class="font-semibold text-slate-800">${escapeHtml(order.customerName || 'ບໍ່ລະບຸຊື່')}</div>
-                            <div class="text-[11px] text-slate-400">${escapeHtml(order.customerPhone || 'ບໍ່ລະບຸເບີໂທ')}</div>
+                            <div>${waHtml}</div>
                         </td>
                         <td class="p-4">
                             <div class="text-xs text-slate-700 font-medium">${itemCount} ລາຍການ</div>
@@ -541,11 +606,10 @@
             }).join('');
         }
 
-        // Dashboard totals exclude cancelled orders
-        function calculateDashboardTotals() {
+        function calculateDashboardTotals(list) {
             let totalSales = 0, totalCost = 0, totalShipping = 0;
 
-            orders.forEach(order => {
+            list.forEach(order => {
                 if (order.status === 'Cancelled') return;
                 totalSales += calculateOrderSales(order);
                 totalCost += calculateOrderCost(order);
@@ -638,7 +702,6 @@
             openEditModal(newId);
         }
 
-        // Full render of item rows (only on open / add / remove)
         function renderModalItems(items) {
             const itemsBody = document.getElementById('modalItemsBody');
 
@@ -679,7 +742,6 @@
             updateModalCalculations();
         }
 
-        // Update one field WITHOUT re-rendering inputs (keeps cursor focus)
         function updateItemField(index, key, value) {
             const order = orders.find(o => o.id === currentEditingOrderId);
             if (!order || !order.items[index]) return;
@@ -735,7 +797,7 @@
             profitEl.className = `text-base sm:text-lg font-extrabold ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
         }
 
-        // ---------- Auto-save (debounced) ----------
+        // ---------- Auto-save ----------
         function handleAutoSave() {
             if (!currentEditingOrderId) return;
 
@@ -801,7 +863,6 @@
 
             const deletingEditedOrder = currentEditingOrderId === pendingDeleteOrderId;
             if (deletingEditedOrder) {
-                // Stop pending auto-save so it can't touch the deleted order
                 if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
                 document.getElementById('orderModal').classList.add('hidden');
                 currentEditingOrderId = null;
