@@ -838,3 +838,33 @@
     </script>
 </body>
 </html>
+// ---------- WhatsApp ----------
+function toWhatsAppNumber(phone) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('00856')) d = d.slice(2);
+  if (d.startsWith('856')) return d;
+  if (d.startsWith('0')) d = d.slice(1);
+  return '856' + d;
+}
+
+function buildWhatsAppLink(order) {
+  const number = toWhatsAppNumber(order.customerPhone);
+  if (!number) return '';
+  const name = order.customerName || '';
+  const msgs = {
+    Pending: `ສະບາຍດີ ${name} ອໍເດີ ${order.id} ຂອງທ່ານໄດ້ຮັບແລ້ວ ກຳລັງລໍຖ້າດຳເນີນການ`,
+    Processing: `ສະບາຍດີ ${name} ອໍເດີ ${order.id} ຂອງທ່ານກຳລັງດຳເນີນການ`,
+    Completed: `ສະບາຍດີ ${name} ອໍເດີ ${order.id} ຂອງທ່ານສຳເລັດແລ້ວ ຂອບໃຈທີ່ສັ່ງຊື້`,
+    Cancelled: `ສະບາຍດີ ${name} ອໍເດີ ${order.id} ຂອງທ່ານຖືກຍົກເລີກ ຖ້າມີຂໍ້ສົງໄສກະລຸນາຕິດຕໍ່ຮ້ານ`
+  };
+  const text = msgs[order.status] || msgs.Pending;
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+}
+
+function waButtonHTML(order) {
+  const link = buildWhatsAppLink(order);
+  if (!link) return '';
+  return `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" title="ສົ່ງ WhatsApp" class="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all flex items-center gap-1"><i class="fa-brands fa-whatsapp text-sm"></i><span class="text-xs hidden sm:inline">WhatsApp</span></a>`;
+}
+
