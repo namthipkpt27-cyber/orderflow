@@ -1,6 +1,129 @@
 <!DOCTYPE html>
 <html lang="lo">
-<head>u
+<head>
+<script>
+// ===== ຮູບສິນຄ້າ (Product images) =====
+window.addEventListener('DOMContentLoaded', () => {
+    const IMAGE_BUCKET = 'order-images';
+
+    function resizeImage(file, maxSize = 800) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                canvas.toBlob(b => b ? resolve(b) : reject(new Error('resize failed')), 'image/jpeg', 0.8);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('ອ່ານຮູບບໍ່ໄດ້')); };
+            img.src = url;
+        });
+    }
+
+    async function uploadItemImage(index, input) {
+        const file = input.files && input.files[0];
+        input.value = '';
+        const order = orders.find(o => o.id === currentEditingOrderId);
+        if (!file || !order || !order.items[index] || !currentUser) return;
+        const item = order.items[index];
+        updateAutoSaveStatus('saving', 'ກໍາລັງອັບໂຫຼດຮູບ...');
+        try {
+            const blob = await resizeImage(file);
+            const path = `${currentUser.id}/${order.id}/${item.id || index}-${Date.now()}.jpg`;
+            const { error } = await db.storage.from(IMAGE_BUCKET).upload(path, blob, { contentType: 'image/jpeg' });
+            if (error) throw error;
+            const { data } = db.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+            item.image = data.publicUrl;
+            if (currentEditingOrderId === order.id) {
+                renderModalItems(order.items);
+                handleAutoSave();
+            } else {
+                await saveOrder(order);
+            }
+        } catch (e) {
+            showToast('ອັບໂຫຼດຮູບບໍ່ສໍາເລັດ: ' + (e.message || e));
+            updateAutoSaveStatus('error', 'ອັບໂຫຼດຮູບບໍ່ສໍາເລັດ');
+        }
+    }
+
+    // ເພີ່ມຊ່ອງຮູບໃນຕາຕະລາງສິນຄ້າ (ໜ້າແກ້ໄຂ)
+    const _renderModalItems = renderModalItems;
+    renderModalItems = function (items) {
+        _renderModalItems(items);
+        const body = document.getElementById('modalItemsBody');
+        const headRow = body.closest('table').querySelector('thead tr');
+        if (!headRow.querySelector('.img-th')) {
+            const th = document.createElement('th');
+            th.className = 'img-th p-2.5 w-16 text-center';
+            th.textContent = 'ຮູບ';
+            headRow.insertBefore(th, headRow.firstChild);
+        }
+        const order = orders.find(o => o.id === currentEditingOrderId);
+        const rows = body.querySelectorAll('tr');
+        if (!order || !order.items || order.items.length === 0) {
+            rows.forEach(r => { const c = r.querySelector('td[colspan]'); if (c) c.colSpan = 7; });
+            return;
+        }
+        rows.forEach((row, index) => {
+            const item = order.items[index];
+            if (!item) return;
+            const td = document.createElement('td');
+            td.className = 'p-2 text-center';
+            const label = document.createElement('label');
+            label.className = 'cursor-pointer inline-block';
+            label.title = 'ເລືອກຮູບ';
+            if (item.image) {
+                const im = document.createElement('img');
+                im.src = item.image;
+                im.className = 'w-10 h-10 object-cover rounded-lg border border-slate-200';
+                label.appendChild(im);
+            } else {
+                const ph = document.createElement('span');
+                ph.className = 'w-10 h-10 rounded-lg border border-dashed border-slate-300 text-slate-400 flex items-center justify-center';
+                ph.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                label.appendChild(ph);
+            }
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.className = 'hidden';
+            input.onchange = () => uploadItemImage(index, input);
+            label.appendChild(input);
+            td.appendChild(label);
+            row.insertBefore(td, row.firstChild);
+        });
+    };
+
+    // ສະແດງຮູບນ້ອຍໃນຕາຕະລາງອໍເດີຫຼັກ
+    const _renderOrders = renderOrders;
+    renderOrders = function () {
+        _renderOrders();
+        document.querySelectorAll('#orderTableBody tr').forEach(row => {
+            const idEl = row.querySelector('.font-mono');
+            if (!idEl) return;
+            const order = orders.find(o => o.id === idEl.textContent.trim());
+            if (!order) return;
+            const imgs = (order.items || []).filter(i => i.image).slice(0, 3);
+            if (imgs.length === 0) return;
+            const box = document.createElement('div');
+            box.className = 'flex gap-1 mt-1';
+            imgs.forEach(i => {
+                const im = document.createElement('img');
+                im.src = i.image;
+                im.loading = 'lazy';
+                im.className = 'w-8 h-8 object-cover rounded-md border border-slate-200';
+                box.appendChild(im);
+            });
+            row.cells[2].appendChild(box);
+        });
+    };
+});
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ລະບົບຈັດການລາຍການສັ່ງຊື້ ແລະ ຄິດໄລ່ກໍາໄລ (Order & Profit Management System)</title>
