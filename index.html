@@ -142,6 +142,26 @@ window.addEventListener('DOMContentLoaded', () => {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
+            /* โค้ดปรับแต่ง Modal และตารางให้พอดีมือถือ/ไอแพด */
+    @media (max-width: 768px) {
+        #orderModal > div {
+            width: 95% !important;
+            max-width: 100% !important;
+            max-height: 90vh !important;
+            margin: auto;
+            padding: 12px !important;
+        }
+        #modalItemsBody input {
+            font-size: 12px !important;
+            padding: 4px 6px !important;
+        }
+    }
+    @media (min-width: 769px) {
+        #orderModal > div {
+            max-width: 800px !important;
+        }
+    }
+
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
