@@ -1322,6 +1322,52 @@ main > section:first-of-type { display: none; }
   ahBadges();
 })();
 </script>
+<script>
+(function () {
+  const FORM_URL = 'https://namthipkpt27-cyber.github.io/orderflow/form.html';
+  const QR_URL = 'https://namthipkpt27-cyber.github.io/orderflow/qr.jpg';
+
+  function buildMsg(o) {
+    return `ສະບາຍດີ ${o.customerName || ''} 🙏\n📦 ອໍເດີ #${o.id} ຂອງທ່ານມາຮອດປະເທດລາວແລ້ວ\n\n📍 ກະລຸນາກົດລິ້ງເພື່ອກອກທີ່ຢູ່ຈັດສົ່ງ:\n${FORM_URL}\n\n💳 ຊໍາລະເງິນ (ສະແກນ QR):\n${QR_URL}\n\nຂອບໃຈຫຼາຍໆ`;
+  }
+
+  window.ahNotify = function (id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const ph = formatWhatsAppPhone(o.customerPhone);
+    window.open('https://wa.me/' + (ph || '') + '?text=' + encodeURIComponent(buildMsg(o)), '_blank');
+  };
+
+  window.ahCopy = async function (id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const t = buildMsg(o);
+    try {
+      await navigator.clipboard.writeText(t);
+      showToast('ກັອບຂໍ້ຄວາມແລ້ວ ໄປວາງໃນ Messenger ໄດ້ເລີຍ');
+    } catch (e) {
+      window.prompt('ກັອບຂໍ້ຄວາມນີ້:', t);
+    }
+  };
+
+  function render() {
+    const list = orders.filter(o => o.status === 'Arrived');
+    document.getElementById('ah-arrived-list').innerHTML = list.length
+      ? list.map(o => {
+          const id = escapeHtml(o.id);
+          const wa = o.customerPhone ? `<button class="ah-btn wa" onclick="ahNotify('${id}')">ແຈ້ງ WhatsApp</button>` : '';
+          return `<div class="ah-row"><div><div style="font-weight:600">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div><div class="ah-muted">${id}</div></div><div style="display:flex;flex-direction:column;gap:6px">${wa}<button class="ah-btn" onclick="ahCopy('${id}')">ກັອບຂໍ້ຄວາມ (Messenger)</button></div></div>`;
+        }).join('')
+      : '<div class="ah-empty">ບໍ່ມີອໍເດີທີ່ສິນຄ້າມາຮອດລາວແລ້ວ</div>';
+  }
+
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s(n);
+    if (n === 'arrived') render();
+  };
+})();
+</script>
 
 </body>
 </html>
