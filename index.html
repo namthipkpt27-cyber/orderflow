@@ -1023,8 +1023,6 @@ window.addEventListener('DOMContentLoaded', () => {
 // ===== ສະຖານະໃໝ່ + ຂະໜາດ/ສີ =====
 (function () {
   const STATUSES = [
-    ['Pending',    '🟡', 'ລໍຖ້າດໍາເນີນການ',          'amber'],
-    ['Processing', '🔵', 'ກໍາລັງດໍາເນີນການ',          'blue'],
     ['Sourcing',   '🟠', 'ກໍາລັງສັ່ງຊື້ຈາກຈີນ',       'orange'],
     ['Shipping',   '🟣', 'ຢູ່ລະຫວ່າງຂົນສົ່ງ',        'purple'],
     ['Arrived',    '📦', 'ສິນຄ້າມາຮອດລາວແລ້ວ',      'sky'],
@@ -1100,6 +1098,18 @@ window.addEventListener('DOMContentLoaded', () => {
     _swa({ ...order, items: (order.items || []).map(i => ({ ...i, name: i.name + (i.variant ? ' (' + i.variant + ')' : '') })) });
   };
 
+  renderOrders();
+})();
+</script>
+<script>
+(function () {
+  const _r = renderOrders;
+  renderOrders = function () {
+    orders.forEach(o => {
+      if (o.status === 'Pending' || o.status === 'Processing') o.status = 'Sourcing';
+    });
+    _r();
+  };
   renderOrders();
 })();
 </script>
