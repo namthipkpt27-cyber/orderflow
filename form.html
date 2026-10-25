@@ -87,24 +87,36 @@ function sendToWhatsApp() {
 
 <script>
     function sendToWhatsApp() {
-        const name = document.querySelector('input[type="text"]').value;
-        const phone = document.querySelector('input[type="tel"], input[placeholder*="ເບີ"]').value;
-        const address = document.querySelector('textarea').value;
-        
-        const message = `*📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ*\n\n👤 ຊື່: ${name}\n📞 เบอร์โทร: ${phone}\n📍 ທີ່ຢູ່: ${address}`;
-        const encodedMessage = encodeURIComponent(message);
-        
+        const name = document.getElementById('customerName').value;
+        const phone = document.getElementById('customerPhone').value;
+        const address = document.getElementById('customerAddress').value;
+
+        let m = `🛒 ລູກຄ້າแจ้งຂໍ້ມູນການຈັດສົ່ງ\n`;
+        m += `--------------------\n`;
+        m += `👤 ຊື່ລູກຄ້າ: *${name}*\n`;
+        m += `📞 เบอร์โทร: *${phone}*\n`;
+        m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: *${address}*\n`;
+        m += `--------------------\n`;
+        m += `🙏 ຂໍຂອບໃຈເด้อ!`;
+
+        const encodedMessage = encodeURIComponent(m);
         window.open(`https://wa.me/8562078624949?text=${encodedMessage}`, '_blank');
     }
 
     function sendToMessenger() {
-        const name = document.querySelector('input[type="text"]').value;
-        const phone = document.querySelector('input[type="tel"], input[placeholder*="ເບີ"]').value;
-        const address = document.querySelector('textarea').value;
-        
-        const message = `📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ\n\n👤 ຊື່: ${name}\n📞 เบอร์โทร: ${phone}\n📍 ທີ່ຢູ່: ${address}`;
-        const encodedMessage = encodeURIComponent(message);
-        
+        const name = document.getElementById('customerName').value;
+        const phone = document.getElementById('customerPhone').value;
+        const address = document.getElementById('customerAddress').value;
+
+        let m = `🛒 ລູກຄ້າแจ้งຂໍ້ມູນການຈັດສົ່ງ\n`;
+        m += `--------------------\n`;
+        m += `👤 ຊື່ລູກຄ້າ: *${name}*\n`;
+        m += `📞 เบอร์โทร: *${phone}*\n`;
+        m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: *${address}*\n`;
+        m += `--------------------\n`;
+        m += `🙏 ຂໍຂອບໃຈເด้อ!`;
+
+        const encodedMessage = encodeURIComponent(m);
         window.open(`https://m.me/61573177659546?text=${encodedMessage}`, '_blank');
     }
 </script>
