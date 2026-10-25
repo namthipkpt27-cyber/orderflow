@@ -142,35 +142,43 @@ window.addEventListener('DOMContentLoaded', () => {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
-/* ===== ปรับการ์ดหน้าแรกให้บางและกะทัดรัด เห็นหลายออเดอร์ในหน้าจอเดียว ===== */
+/* ===== ปรับการ์ดหน้าแรกให้แสดงผลเป็น 2 คอลัมน์ (ซ้าย-ขวา คนละออเดอร์) บนมือถือ ===== */
     @media (max-width: 768px) {
         table thead {
             display: none !important;
         }
+        /* เปลี่ยน tbody ให้แสดงผลแบบ Grid แบ่งเป็น 2 คอลัมน์เท่าๆ กัน */
+        table tbody {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+            padding: 4px !important;
+        }
         table tbody tr {
-            display: block !important;
+            display: flex !important;
+            flex-direction: column !important;
             background: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important;
-            padding: 6px 10px !important;  /* บีบพื้นที่ด้านในให้บางลงสุดๆ */
-            margin-bottom: 6px !important; /* ลดช่องว่างระหว่างการ์ดให้ชิดกันขึ้น */
-            box-shadow: none !important;
+            border-radius: 10px !important;
+            padding: 8px !important;
+            margin-bottom: 0 !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+            box-sizing: border-box !important;
         }
         table tbody tr td {
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            padding: 2px 0 !important;     /* บีบความสูงแต่ละบรรทัดให้แคบลง */
-            border-bottom: none !important; /* เอาเส้นคั่นออกให้ดูสะอาดตา */
-            text-align: right !important;
-            font-size: 12px !important;    /* ลดขนาดตัวหนังสือลงนิดนึง */
+            padding: 2px 0 !important;
+            border: none !important;
+            font-size: 10px !important; /* ย่อขนาดตัวอักษรให้พอดีกับช่องที่แคบลง */
         }
+        /* ซ่อนข้อมูลบางส่วนที่ไม่จำเป็นชั่วคราว หรือจัดให้กระชับ เพื่อไม่ให้การ์ดยาวเกินไป */
         table tbody tr td::before {
             content: attr(data-label);
             font-weight: 500;
             color: #64748b;
-            font-size: 11px;
-            text-align: left;
+            font-size: 9px;
         }
     }
 
