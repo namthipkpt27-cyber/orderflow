@@ -1161,6 +1161,167 @@ window.addEventListener('DOMContentLoaded', () => {
   renderOrders();
 })();
 </script>
+<style>
+/* ===== ໂທນຂາວ-ມ່ວງ + ໜ້າຫຼັກແບບແອັບ ===== */
+main > section:first-of-type { display: none; }
+.bg-indigo-600 { background-color: #7c3aed !important; }
+.hover\:bg-indigo-700:hover { background-color: #6d28d9 !important; }
+.text-indigo-600 { color: #7c3aed !important; }
+.bg-indigo-50 { background-color: #f5f0ff !important; }
+.bg-indigo-100 { background-color: #ede4ff !important; }
+#appHome { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: #faf8ff; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); font-family: 'Noto Sans Lao', sans-serif; color: #2a2147; }
+#appHome .wrap { max-width: 480px; margin: 0 auto; }
+.ah-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.ah-tile { position: relative; background: #fff; border: 1px solid #ece6fb; border-radius: 20px; padding: 18px 8px 14px; text-align: center; font-size: 14px; font-weight: 600; color: #2a2147; cursor: pointer; font-family: inherit; }
+.ah-tile:active { transform: scale(.97); }
+.ah-ic { width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 10px; display: grid; place-items: center; font-size: 22px; background: #f1eafe; color: #7c3aed; }
+.ah-badge { position: absolute; top: 10px; right: 10px; background: #7c3aed; color: #fff; border-radius: 999px; font-size: 11px; padding: 2px 8px; }
+.ah-back { width: 40px; height: 40px; border-radius: 12px; border: 1px solid #ece6fb; background: #fff; font-size: 20px; cursor: pointer; color: #2a2147; }
+.ah-row { background: #fff; border: 1px solid #ece6fb; border-radius: 18px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ah-btn { border: 0; border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #fff; background: #7c3aed; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.ah-btn.wa { background: #16a34a; }
+.ah-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.ah-head h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.ah-muted { color: #7d7599; font-size: 12px; }
+.ah-empty { text-align: center; color: #7d7599; padding: 40px 10px; font-size: 14px; }
+</style>
+
+<script>
+(function () {
+  const home = document.createElement('div');
+  home.id = 'appHome';
+  home.innerHTML = `
+  <div class="wrap">
+    <div id="ah-home">
+      <div class="ah-head" style="margin-bottom:22px">
+        <div class="ah-ic" style="margin:0;background:#7c3aed;color:#fff"><i class="fa-solid fa-boxes-packing"></i></div>
+        <div><h2>OrderFlow Lao</h2><div class="ah-muted">ລະບົບຈັດການອໍເດີ</div></div>
+      </div>
+      <div class="ah-grid">
+        <button class="ah-tile" onclick="ahShow('orders')"><span class="ah-badge" id="ah-b-orders">0</span><div class="ah-ic"><i class="fa-solid fa-box-open"></i></div>ອໍເດີລູກຄ້າ</button>
+        <button class="ah-tile" onclick="ahShow('summary')"><div class="ah-ic"><i class="fa-solid fa-chart-column"></i></div>ສະຫຼຸບຍອດ</button>
+        <button class="ah-tile" onclick="ahShow('orders');createNewOrder()"><div class="ah-ic"><i class="fa-solid fa-plus"></i></div>ເພີ່ມອໍເດີໃໝ່</button>
+        <button class="ah-tile" onclick="ahShow('contacts')"><div class="ah-ic"><i class="fa-brands fa-whatsapp"></i></div>ທັກຫາລູກຄ້າ</button>
+        <button class="ah-tile" onclick="ahShow('arrived')"><span class="ah-badge" id="ah-b-arrived">0</span><div class="ah-ic"><i class="fa-solid fa-bell"></i></div>ແຈ້ງສິນຄ້າມາຮອດ</button>
+        <button class="ah-tile" onclick="signOut()"><div class="ah-ic" style="background:#f3f4f6;color:#6b7280"><i class="fa-solid fa-right-from-bracket"></i></div>ອອກຈາກລະບົບ</button>
+      </div>
+    </div>
+
+    <div id="ah-summary" style="display:none">
+      <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ສະຫຼຸບຍອດ</h2></div>
+      <button id="ah-eye" onclick="ahToggleEye()" style="width:100%;border:1px dashed #d9cff5;background:none;border-radius:14px;padding:12px;font-size:13px;color:#7d7599;margin-bottom:14px;cursor:pointer;font-family:inherit">ແຕະເພື່ອສະແດງຕົວເລກ</button>
+      <div class="ah-row"><span class="ah-muted" style="font-size:14px">ຍອດຂາຍລວມ</span><b class="ah-v" id="ah-s" style="font-size:20px"></b></div>
+      <div class="ah-row"><span class="ah-muted" style="font-size:14px">ຕົ້ນທຶນລວມ</span><b class="ah-v" id="ah-c" style="font-size:20px;color:#d97706"></b></div>
+      <div class="ah-row"><span class="ah-muted" style="font-size:14px">ຄ່າຈັດສົ່ງລວມ</span><b class="ah-v" id="ah-sh" style="font-size:20px;color:#7c3aed"></b></div>
+      <div class="ah-row"><span class="ah-muted" style="font-size:14px">ກໍາໄລສຸດທິລວມ</span><b class="ah-v" id="ah-p" style="font-size:20px;color:#059669"></b></div>
+    </div>
+
+    <div id="ah-contacts" style="display:none">
+      <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ທັກຫາລູກຄ້າ</h2></div>
+      <div id="ah-contacts-list"></div>
+    </div>
+
+    <div id="ah-arrived" style="display:none">
+      <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ແຈ້ງສິນຄ້າມາຮອດ</h2></div>
+      <div id="ah-arrived-list"></div>
+    </div>
+  </div>`;
+  document.body.appendChild(home);
+
+  // ປຸ່ມກັບໜ້າຫຼັກ ໃນຫົວໜ້າລາຍການອໍເດີ
+  const hd = document.querySelector('header .flex.items-center.gap-3');
+  if (hd) {
+    const bb = document.createElement('button');
+    bb.textContent = '‹';
+    bb.setAttribute('aria-label', 'ໜ້າຫຼັກ');
+    bb.className = 'w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-lg';
+    bb.onclick = () => ahShow('home');
+    hd.insertBefore(bb, hd.firstChild);
+  }
+
+  let eyeOn = false;
+
+  window.ahShow = function (n) {
+    const h = document.getElementById('appHome');
+    if (n === 'orders') { h.style.display = 'none'; window.scrollTo(0, 0); return; }
+    h.style.display = 'block';
+    ['home', 'summary', 'contacts', 'arrived'].forEach(p => {
+      document.getElementById('ah-' + p).style.display = p === n ? 'block' : 'none';
+    });
+    if (n === 'home') ahBadges();
+    if (n === 'summary') ahSummary();
+    if (n === 'contacts') ahContacts();
+    if (n === 'arrived') ahArrived();
+    h.scrollTop = 0;
+  };
+
+  function ahBadges() {
+    document.getElementById('ah-b-orders').textContent = orders.length;
+    const n = orders.filter(o => o.status === 'Arrived').length;
+    const b = document.getElementById('ah-b-arrived');
+    b.textContent = n;
+    b.style.display = n ? 'block' : 'none';
+  }
+
+  function ahSummary() {
+    let s = 0, c = 0, sh = 0;
+    orders.forEach(o => {
+      if (o.status === 'Cancelled') return;
+      s += calculateOrderSales(o);
+      c += calculateOrderCost(o);
+      sh += Number(o.shippingFee) || 0;
+    });
+    const p = s - c - sh;
+    const set = (id, t) => { const e = document.getElementById(id); e.dataset.v = t; e.textContent = eyeOn ? t : '••••••'; };
+    set('ah-s', '₭ ' + fmt(s));
+    set('ah-c', '₭ ' + fmt(c));
+    set('ah-sh', '₭ ' + fmt(sh));
+    set('ah-p', (p >= 0 ? '+' : '') + '₭ ' + fmt(p));
+  }
+
+  window.ahToggleEye = function () {
+    eyeOn = !eyeOn;
+    document.querySelectorAll('.ah-v').forEach(e => { e.textContent = eyeOn ? e.dataset.v : '••••••'; });
+    document.getElementById('ah-eye').textContent = eyeOn ? 'ແຕະເພື່ອເຊື່ອງຕົວເລກ' : 'ແຕະເພື່ອສະແດງຕົວເລກ';
+  };
+
+  function ahContacts() {
+    const seen = {};
+    orders.forEach(o => {
+      const ph = formatWhatsAppPhone(o.customerPhone);
+      if (!ph) return;
+      if (!seen[ph]) seen[ph] = { name: o.customerName, phone: o.customerPhone, ph: ph, ids: [] };
+      seen[ph].ids.push(o.id);
+    });
+    const list = Object.values(seen);
+    document.getElementById('ah-contacts-list').innerHTML = list.length
+      ? list.map(c => `<div class="ah-row"><div><div style="font-weight:600">${escapeHtml(c.name || 'ບໍ່ລະບຸຊື່')}</div><div class="ah-muted">${escapeHtml(c.phone)} · ${c.ids.length} ອໍເດີ</div></div><button class="ah-btn wa" onclick="ahChat('${c.ph}')">ທັກ WhatsApp</button></div>`).join('')
+      : '<div class="ah-empty">ຍັງບໍ່ມີລູກຄ້າທີ່ມີເບີ WhatsApp</div>';
+  }
+
+  window.ahChat = function (ph) { window.open('https://wa.me/' + ph, '_blank'); };
+
+  function ahArrived() {
+    const list = orders.filter(o => o.status === 'Arrived');
+    document.getElementById('ah-arrived-list').innerHTML = list.length
+      ? list.map(o => `<div class="ah-row"><div><div style="font-weight:600">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div><div class="ah-muted">${escapeHtml(o.id)}${o.customerPhone ? '' : ' · ບໍ່ມີເບີໂທ'}</div></div><button class="ah-btn" onclick="ahNotify('${escapeHtml(o.id)}')">ແຈ້ງລູກຄ້າ</button></div>`).join('')
+      : '<div class="ah-empty">ບໍ່ມີອໍເດີທີ່ສິນຄ້າມາຮອດລາວແລ້ວ</div>';
+  }
+
+  window.ahNotify = function (id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const msg = `ສະບາຍດີ ${o.customerName || ''} 🙏\n📦 ສິນຄ້າອໍເດີ #${o.id} ມາຮອດລາວແລ້ວ\nກະລຸນາແຈ້ງທີ່ຢູ່ຈັດສົ່ງ ຫຼື ວັນທີ່ມາຮັບສິນຄ້າ\nຂອບໃຈຫຼາຍໆ`;
+    const ph = formatWhatsAppPhone(o.customerPhone);
+    window.open('https://wa.me/' + (ph || '') + '?text=' + encodeURIComponent(msg), '_blank');
+  };
+
+  // ອັບເດດຕົວເລກເມື່ອຂໍ້ມູນໂຫຼດ/ປ່ຽນ
+  const _r = renderOrders;
+  renderOrders = function () { _r(); ahBadges(); };
+  ahBadges();
+})();
+</script>
 
 </body>
 </html>
