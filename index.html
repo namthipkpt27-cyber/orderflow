@@ -1019,6 +1019,90 @@ window.addEventListener('DOMContentLoaded', () => {
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
             }[m]));
         }
-    </script>
+    </script><script>
+// ===== ສະຖານະໃໝ່ + ຂະໜາດ/ສີ =====
+(function () {
+  const STATUSES = [
+    ['Pending',    '🟡', 'ລໍຖ້າດໍາເນີນການ',          'amber'],
+    ['Processing', '🔵', 'ກໍາລັງດໍາເນີນການ',          'blue'],
+    ['Sourcing',   '🟠', 'ກໍາລັງສັ່ງຊື້ຈາກຈີນ',       'orange'],
+    ['Shipping',   '🟣', 'ຢູ່ລະຫວ່າງຂົນສົ່ງ',        'purple'],
+    ['Arrived',    '📦', 'ສິນຄ້າມາຮອດລາວແລ້ວ',      'sky'],
+    ['Delivered',  '🚚', 'ຈັດສົ່ງໃຫ້ລູກຄ້າແລ້ວ',     'teal'],
+    ['Completed',  '🟢', 'ສໍາເລັດແລ້ວ',              'emerald'],
+    ['Cancelled',  '🔴', 'ຍົກເລີກ',                  'rose']
+  ];
+
+  // 1) ເມນູເລືອກສະຖານະໃນຟອມແກ້ໄຂ
+  document.getElementById('editOrderStatus').innerHTML =
+    STATUSES.map(s => `<option value="${s[0]}">${s[1]} ${s[2]}</option>`).join('');
+
+  // 2) ປຸ່ມກອງສະຖານະ
+  const allBtn = document.getElementById('filter-All');
+  const bar = allBtn.parentElement;
+  bar.querySelectorAll('.filter-btn').forEach(b => { if (b.id !== 'filter-All') b.remove(); });
+  STATUSES.forEach(s => {
+    const b = document.createElement('button');
+    b.id = 'filter-' + s[0];
+    b.className = 'filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap';
+    b.textContent = s[2];
+    b.onclick = () => setFilter(s[0]);
+    bar.appendChild(b);
+  });
+
+  // 3) ປ້າຍສະຖານະ (ມີສີຂອງແຕ່ລະອັນ)
+  getStatusBadgeHTML = function (status) {
+    const s = STATUSES.find(x => x[0] === status) || STATUSES[0];
+    const c = s[3];
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-${c}-50 text-${c}-700 border border-${c}-200 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-${c}-500"></span> ${s[2]}</span>`;
+  };
+
+  // 4) ຊ່ອງ ຂະໜາດ / ສີ ໃນຟອມແກ້ໄຂ (ຢູ່ລຸ່ມຊື່ສິນຄ້າ)
+  const _rmi = renderModalItems;
+  renderModalItems = function (items) {
+    _rmi(items);
+    const order = orders.find(o => o.id === currentEditingOrderId);
+    if (!order || !order.items) return;
+    document.querySelectorAll('#modalItemsBody tr').forEach((row, i) => {
+      const item = order.items[i];
+      const nameInput = row.querySelector('input[type=text]:not(.variant-input)');
+      if (!item || !nameInput || row.querySelector('.variant-input')) return;
+      const v = document.createElement('input');
+      v.type = 'text';
+      v.className = 'variant-input w-full min-w-[120px] mt-1 px-2 py-1 border border-dashed border-slate-300 rounded-lg text-[11px] focus:ring-1 focus:ring-indigo-500 focus:outline-none';
+      v.placeholder = 'ຂະໜາດ / ສີ (ເຊັ່ນ XL, ດໍາ)';
+      v.value = item.variant || '';
+      v.oninput = () => updateItemField(i, 'variant', v.value);
+      nameInput.parentElement.appendChild(v);
+    });
+  };
+
+  // 5) ສະແດງ ຂະໜາດ/ສີ ໃນຕາຕະລາງຫຼັກ
+  const _ro = renderOrders;
+  renderOrders = function () {
+    _ro();
+    document.querySelectorAll('#orderTableBody tr').forEach(row => {
+      const idEl = row.querySelector('.font-mono');
+      if (!idEl) return;
+      const order = orders.find(o => o.id === idEl.textContent.trim());
+      if (!order) return;
+      const d = row.cells[2] && row.cells[2].querySelector('.truncate');
+      if (!d) return;
+      const t = (order.items || []).map(i => `${i.name}${i.variant ? ' [' + i.variant + ']' : ''} (x${i.quantity})`).join(', ');
+      d.classList.remove('truncate');
+      d.textContent = t;
+    });
+  };
+
+  // 6) ໃສ່ ຂະໜາດ/ສີ ໃນຂໍ້ຄວາມ WhatsApp ດ້ວຍ
+  const _swa = sendOrderToWhatsApp;
+  sendOrderToWhatsApp = function (order) {
+    _swa({ ...order, items: (order.items || []).map(i => ({ ...i, name: i.name + (i.variant ? ' (' + i.variant + ')' : '') })) });
+  };
+
+  renderOrders();
+})();
+</script>
+
 </body>
 </html>
