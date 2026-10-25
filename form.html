@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ຟอร์ມ ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</title>
+    <title>ຟໍາມຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -14,7 +14,7 @@
 
     <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100">
         <h2 class="text-xl font-bold text-gray-800 text-center mb-1">📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</h2>
-        <p class="text-sm text-gray-500 text-center mb-6">ກະລຸນາຕື່ມຂໍ້ມູນຂອງທ່ານໃຫ້ครบถ้วน เพื่อຄວາມສະດວກໃນການຈັດສົ່ງ</p>
+        <p class="text-sm text-gray-500 text-center mb-6">ກະລຸນາຕື່ມຂໍ້ມູນຂອງທ່ານໃຫ້ຄົບຖ້ວນ ເພື່ອຄວາມສະດວກໃນການຈັດສົ່ງ</p>
 
         <form id="orderForm" onsubmit="sendToWhatsApp(event)" class="space-y-4">
             <!-- ຊື່ລູກຄ້າ -->
@@ -22,26 +22,26 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ຊື່ ແລະ ນາມສະກຸນ (ຊື່ລູກຄ້າ)</label>
                 <input type="text" id="customerName" required 
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="ປອນຊື່-ນາມສະກຸນ ຂອງທ່ານ...">
+                    placeholder="ป้อนຊື່ ແລະ ນາມສະກຸນ ຂອງທ່ານ...">
             </div>
 
-            <!-- เบอร์โทร -->
+            <!-- ເບີໂທ -->
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">📞 เบอร์โทรศัพท์ (ຕິດ​ຕໍ່)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">📞 ເບີໂທລະສັບ (ຕິດຕໍ່)</label>
                 <input type="tel" id="customerPhone" required 
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="ຕົວຢ່າງ: 20xxxxxxxx">
             </div>
 
-            <!-- ที่อยู่ และ สาขาขนส่ง -->
+            <!-- ທີ່ຢູ່ ແລະ ສາຂາຂົນສົ່ງ -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">📍 ທີ່ຢູ່ຈັດສົ່ງ / ສາຂາຂົນສົ່ງ</label>
                 <textarea id="customerAddress" rows="3" required 
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="ລະບຸ ບ້ານ, ເມືອງ, ແຂວງ ຫຼື ຊື່ສາຂາຂົນສົ່ງ (J&T, FLASH, XPD ฯลฯ)..."></textarea>
+                    placeholder="ລະບຸ ບ້ານ, ເມືອງ, ແຂວງ ຫຼື ຂົນສົ່ງ (ອານຸສິດ, ຮຸ່ງອາລຸນ [HAL], ມີໄຊ)..."></textarea>
             </div>
 
-            <!-- ปุ่มกดส่ง -->
+            <!-- ປຸ່ມກົດສົ່ງ -->
             <button type="submit" 
                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md">
                 📤 ຢືນຢັນ ແລະ ສົ່ງຂໍ້ມູນຜ່ານ WhatsApp
@@ -68,7 +68,7 @@
             const phone = document.getElementById('customerPhone').value.trim();
             const address = document.getElementById('customerAddress').value.trim();
 
-            // เบอร์ WhatsApp ร้านของคุณ (เปลี่ยนเป็นเบอร์ร้านของคุณได้เลย เช่น '85620xxxxxxxx')
+            // ປ່ຽນເປັນເບີ WhatsApp ຂອງຮ້ານທ່ານ (ຕົວຢ່າງ: '85620xxxxxxxx')
             const shopWhatsApp = '8562099999999'; 
 
             let m = `🛒 *ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ*\n`;
