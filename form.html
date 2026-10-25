@@ -85,23 +85,29 @@ function sendToWhatsApp() {
     window.open(`https://wa.me/${shopWhatsApp}?text=${encodedMessage}`, '_blank');
 }
 
-// ฟังก์ชันสำหรับส่งเข้า Facebook Messenger
-function sendToMessenger() {
-    const name = document.getElementById('customerName').value.trim();
-    const phone = document.getElementById('customerPhone').value.trim();
-    const address = document.getElementById('customerAddress').value.trim();
+<script>
+    function sendToWhatsApp() {
+        const name = document.querySelector('input[type="text"]').value;
+        const phone = document.querySelector('input[type="tel"], input[placeholder*="ເບີ"]').value;
+        const address = document.querySelector('textarea').value;
+        
+        const message = `*📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ*\n\n👤 ຊື່: ${name}\n📞 เบอร์โทร: ${phone}\n📍 ທີ່ຢູ່: ${address}`;
+        const encodedMessage = encodeURIComponent(message);
+        
+        window.open(`https://wa.me/8562078624949?text=${encodedMessage}`, '_blank');
+    }
 
-    let m = `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n`;
-    m += `--------------------\n`;
-    m += `👤 ຊື່ລູກຄ້າ: ${name}\n`;
-    m += `📞 ເບີໂທ: ${phone}\n`;
-    m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: ${address}\n`;
-    m += `--------------------\n`;
-    m += `🙏 ຂໍອບໃຈເด้อ!`;
-
-    const encodedMessage = encodeURIComponent(m);
-    window.open(`https://m.me/profile.php?id=61573177659546&text=${encodedMessage}`, '_blank');
-}
+    function sendToMessenger() {
+        const name = document.querySelector('input[type="text"]').value;
+        const phone = document.querySelector('input[type="tel"], input[placeholder*="ເບີ"]').value;
+        const address = document.querySelector('textarea').value;
+        
+        const message = `📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ\n\n👤 ຊື່: ${name}\n📞 เบอร์โทร: ${phone}\n📍 ທີ່ຢູ່: ${address}`;
+        const encodedMessage = encodeURIComponent(message);
+        
+        window.open(`https://m.me/61573177659546?text=${encodedMessage}`, '_blank');
+    }
+</script>
 
 </body>
 </html>
