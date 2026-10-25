@@ -16,7 +16,7 @@
         <h2 class="text-xl font-bold text-gray-800 text-center mb-1">📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</h2>
         <p class="text-sm text-gray-500 text-center mb-6">ກະລຸນາຕື່ມຂໍ້ມູນຂອງທ່ານໃຫ້ຄົບຖ້ວນ ເພື່ອຄວາມສະດວກໃນການຈັດສົ່ງ</p>
 
-        <form id="orderForm" onsubmit="sendToWhatsApp(event)" class="space-y-4">
+        <form id="orderForm" class="space-y-4">
             <!-- ຊື່ລູກຄ້າ -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ຊື່ ແລະ ນາມສະກຸນ (ຊື່ລູກຄ້າ)</label>
@@ -41,11 +41,16 @@
                     placeholder="ລະບຸ ບ້ານ, ເມືອງ, ແຂວງ ຫຼື ຂົນສົ່ງ (ອານຸສິດ, ຮຸ່ງອາລຸນ [HAL], ມີໄຊ)..."></textarea>
             </div>
 
-            <!-- ປຸ່ມກົດສົ່ງ -->
-            <button type="submit" 
-                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md">
-                📤 ຢືນຢັນ ແລະ ສົ່ງຂໍ້ມູນຜ່ານ WhatsApp
-            </button>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-direction: column;">
+    <button type="button" onclick="sendToWhatsApp()" style="background-color: #25D366; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+        📤 ส่งข้อมูลเข้า WhatsApp
+    </button>
+    
+    <button type="button" onclick="sendToMessenger()" style="background-color: #0084FF; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+        📤 ส่งข้อมูลเข้า Facebook Messenger
+    </button>
+</div>
+
         </form>
     </div>
 
@@ -61,27 +66,42 @@
             return cleaned;
         }
 
-        function sendToWhatsApp(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-            const address = document.getElementById('customerAddress').value.trim();
+// ฟังก์ชันสำหรับส่งเข้า WhatsApp (เบอร์ร้านของคุณ)
+function sendToWhatsApp() {
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const address = document.getElementById('customerAddress').value.trim();
 
-            // ປ່ຽນເປັນເບີ WhatsApp ຂອງຮ້ານທ່ານ (ຕົວຢ່າງ: '85620xxxxxxxx')
-            const shopWhatsApp = '8562078624949'; 
+    let m = `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n`;
+    m += `--------------------\n`;
+    m += `👤 *ຊື່ລູກຄ້າ:* ${name}\n`;
+    m += `📞 *ເບີໂທ:* ${phone}\n`;
+    m += `📍 *ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ:* ${address}\n`;
+    m += `--------------------\n`;
+    m += `🙏 ຂໍອບໃຈເด้อ!`;
 
-            let m = `🛒 *ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ*\n`;
-            m += `------------------------------------\n`;
-            m += `👤 *ຊື່ລູກຄ້າ:* ${name}\n`;
-            m += `📞 *ເບີໂທ:* ${phone}\n`;
-            m += `📍 *ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ:* ${address}\n`;
-            m += `------------------------------------\n`;
-            m += `🙏🏻 ຂອບໃຈເດີ້`;
+    const encodedMessage = encodeURIComponent(m);
+    const shopWhatsApp = '8562078624949';
+    window.open(`https://wa.me/${shopWhatsApp}?text=${encodedMessage}`, '_blank');
+}
 
-            const formattedPhone = formatWhatsAppPhone(shopWhatsApp);
-            window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(m)}`, '_blank');
-        }
-    </script>
+// ฟังก์ชันสำหรับส่งเข้า Facebook Messenger
+function sendToMessenger() {
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const address = document.getElementById('customerAddress').value.trim();
+
+    let m = `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n`;
+    m += `--------------------\n`;
+    m += `👤 ຊື່ລູກຄ້າ: ${name}\n`;
+    m += `📞 ເບີໂທ: ${phone}\n`;
+    m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: ${address}\n`;
+    m += `--------------------\n`;
+    m += `🙏 ຂໍອບໃຈເด้อ!`;
+
+    const encodedMessage = encodeURIComponent(m);
+    window.open(`https://m.me/profile.php?id=61573177659546&text=${encodedMessage}`, '_blank');
+}
+
 </body>
 </html>
