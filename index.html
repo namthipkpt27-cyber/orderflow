@@ -1120,8 +1120,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   sendOrderToWhatsApp = function (order) {
     const salesTotal = calculateOrderSales(order);
-    const shipping = Number(order.shippingFee) || 0;
-    const grandTotal = salesTotal + shipping;
+    const grandTotal = salesTotal;
     const items = (order.items || []).map((i, idx) =>
       `${idx + 1}. ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} x${i.quantity} = ₭ ${fmt(i.quantity * i.price)}`
     ).join('\n');
@@ -1137,7 +1136,6 @@ window.addEventListener('DOMContentLoaded', () => {
     m += `📦 *ລາຍການສິນຄ້າ:*\n${items}\n`;
     m += `------------------------------------\n`;
     m += `💵 *ລວມຄ່າສິນຄ້າ:* ₭ ${fmt(salesTotal)}\n`;
-    m += `🚚 *ຄ່າຈັດສົ່ງ:* ₭ ${fmt(shipping)}\n`;
     m += `💰 *ຍອດລວມທັງໝົດ:* ₭ ${fmt(grandTotal)}\n`;
     m += `------------------------------------\n`;
     m += `💳 *ຊໍາລະເງິນ (ສະແກນ QR):*\n${QR_URL}\n`;
