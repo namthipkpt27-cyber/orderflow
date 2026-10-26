@@ -1480,6 +1480,77 @@ main > section:first-of-type { display: none; }
   #orderModal #modalItemsBody tr td[colspan]::before { content: none !important; }
 }
 </style>
+<script>
+(function () {
+  let skipNext = false;
+  let draftId = null;
+
+  // ออเดอร์ใหม่ = ฉบับร่าง (ยังไม่บันทึกลงฐานข้อมูล)
+  const _save = saveOrder;
+  saveOrder = async function (order) {
+    if (skipNext) { skipNext = false; draftId = order.id; return true; }
+    if (draftId && order.id === draftId) return true;
+    return _save(order);
+  };
+
+  const _create = createNewOrder;
+  createNewOrder = function () {
+    skipNext = true;
+    try { _create(); } finally { skipNext = false; }
+  };
+
+  const _close = closeModal;
+  closeModal = function () {
+    if (draftId && draftId === currentEditingOrderId) {
+      if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+      const id = draftId;
+      draftId = null;
+      orders = orders.filter(o => o.id !== id);
+      document.getElementById('orderModal').classList.add('hidden');
+      currentEditingOrderId = null;
+      renderOrders();
+      return;
+    }
+    _close();
+  };
+
+  window.finishNewOrder = async function () {
+    if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+    draftId = null;
+    await executeSave();
+    _close();
+  };
+
+  function footerUI() {
+    const isDraft = !!draftId && draftId === currentEditingOrderId;
+    const footer = document.querySelector('#orderModal div.border-t');
+    if (!footer) return;
+    let done = document.getElementById('orderDoneBtn');
+    let closeBtn = footer.querySelector('button:not(#orderDoneBtn)');
+    if (!done) {
+      done = document.createElement('button');
+      done.id = 'orderDoneBtn';
+      done.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2 rounded-xl transition-all shadow-sm';
+      done.textContent = 'ສໍາເລັດ';
+      done.onclick = () => finishNewOrder();
+      const wrap = document.createElement('div');
+      wrap.className = 'flex items-center gap-2';
+      closeBtn.parentNode.insertBefore(wrap, closeBtn);
+      wrap.appendChild(closeBtn);
+      wrap.appendChild(done);
+    }
+    done.style.display = isDraft ? '' : 'none';
+    closeBtn.textContent = isDraft ? 'ຍົກເລີກ' : 'ປິດໜ້າຕ່າງ';
+  }
+
+  const _open = openEditModal;
+  openEditModal = function (id) {
+    if (draftId && draftId !== id) draftId = null;
+    _open(id);
+    footerUI();
+  };
+})();
+</script>
 
 </body>
 </html>
