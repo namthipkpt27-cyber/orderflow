@@ -1421,6 +1421,65 @@ main > section:first-of-type { display: none; }
   };
 })();
 </script>
+<style>
+/* ===== จัดรายการสินค้าในหน้าต่างแก้ไขออเดอร์ (มือถือ) ===== */
+@media (max-width: 768px) {
+  #orderModal #modalItemsBody { display: block !important; padding: 0 !important; }
+  #orderModal #modalItemsBody tr {
+    display: flex !important; flex-direction: row !important; flex-wrap: wrap !important;
+    gap: 8px !important; padding: 10px !important; margin-bottom: 10px !important;
+    background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 14px !important;
+  }
+  #orderModal #modalItemsBody tr td {
+    display: block !important; padding: 0 !important; border: 0 !important;
+    font-size: 12px !important; white-space: normal !important; text-align: left !important;
+  }
+  #orderModal #modalItemsBody tr td::before { content: none !important; }
+  #orderModal #modalItemsBody tr td input[type=text],
+  #orderModal #modalItemsBody tr td input[type=number] {
+    width: 100% !important; min-width: 0 !important; font-size: 14px !important; padding: 8px 10px !important;
+  }
+
+  /* รูป | ชื่อ + ขนาด/สี | ปุ่มลบ */
+  #orderModal #modalItemsBody tr td:nth-child(1) { order: 1; flex: 0 0 auto !important; }
+  #orderModal #modalItemsBody tr td:nth-child(2) { order: 2; flex: 1 1 calc(100% - 100px) !important; min-width: 0 !important; }
+  #orderModal #modalItemsBody tr td:nth-child(7) { order: 3; flex: 0 0 auto !important; }
+  #orderModal #modalItemsBody tr td:nth-child(2) .variant-input { margin-top: 6px !important; }
+
+  /* จำนวน | ต้นทุน | ราคาขาย (มีป้ายกำกับ) */
+  #orderModal #modalItemsBody tr td:nth-child(3),
+  #orderModal #modalItemsBody tr td:nth-child(4),
+  #orderModal #modalItemsBody tr td:nth-child(5) { flex: 1 1 calc(33.333% - 6px) !important; min-width: 0 !important; }
+  #orderModal #modalItemsBody tr td:nth-child(3) { order: 4; }
+  #orderModal #modalItemsBody tr td:nth-child(4) { order: 5; }
+  #orderModal #modalItemsBody tr td:nth-child(5) { order: 6; }
+  #orderModal #modalItemsBody tr td:nth-child(3)::before { content: 'ຈໍານວນ' !important; }
+  #orderModal #modalItemsBody tr td:nth-child(4)::before { content: 'ຕົ້ນທຶນ/ຊິ້ນ' !important; }
+  #orderModal #modalItemsBody tr td:nth-child(5)::before { content: 'ລາຄາຂາຍ/ຊິ້ນ' !important; }
+  #orderModal #modalItemsBody tr td:nth-child(3)::before,
+  #orderModal #modalItemsBody tr td:nth-child(4)::before,
+  #orderModal #modalItemsBody tr td:nth-child(5)::before {
+    display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 3px;
+  }
+  #orderModal #modalItemsBody tr td:nth-child(3) input,
+  #orderModal #modalItemsBody tr td:nth-child(4) input,
+  #orderModal #modalItemsBody tr td:nth-child(5) input { text-align: right !important; }
+
+  /* ยอดรวมของสินค้า */
+  #orderModal #modalItemsBody tr td:nth-child(6) {
+    order: 7; flex: 0 0 100% !important; display: flex !important;
+    justify-content: space-between !important; align-items: center !important;
+    font-weight: 700 !important; font-size: 13px !important;
+  }
+  #orderModal #modalItemsBody tr td:nth-child(6)::before {
+    content: 'ລວມຂາຍ' !important; font-size: 11px; font-weight: 600; color: #64748b;
+  }
+
+  /* แถว "ບໍ່ມີລາຍການສິນຄ້າ" */
+  #orderModal #modalItemsBody tr td[colspan] { order: 0; flex: 1 1 100% !important; text-align: center !important; }
+  #orderModal #modalItemsBody tr td[colspan]::before { content: none !important; }
+}
+</style>
 
 </body>
 </html>
