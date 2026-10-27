@@ -635,16 +635,16 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         // ---------- WhatsApp Share Helper ----------
-        function formatWhatsAppPhone(phone) {
-            let rawPhone = (phone || '').replace(/[^0-9]/g, '');
-            if (!rawPhone) return '';
-            if (rawPhone.startsWith('020')) {
-                rawPhone = '856' + rawPhone.substring(1);
-            } else if (!rawPhone.startsWith('856') && rawPhone.length >= 8) {
-                rawPhone = '856' + rawPhone;
-            }
-            return rawPhone;
-        }
+         function formatWhatsAppPhone(phone) {
+    let n = (phone || '').replace(/[^0-9]/g, '');
+    if (!n) return '';
+    if (n.startsWith('66') || n.startsWith('856')) return n;
+    if (/^0[689]/.test(n)) return '66' + n.slice(1);
+    if (n.startsWith('0')) return '856' + n.slice(1);
+    if (n.length >= 8) return '856' + n;
+    return n;
+}
+
 
         function sendOrderToWhatsApp(order) {
             const salesTotal = calculateOrderSales(order);
