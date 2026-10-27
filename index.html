@@ -1551,6 +1551,137 @@ main > section:first-of-type { display: none; }
   };
 })();
 </script>
+<script>
+// ===== Messenger (เพจ Facebook) =====
+(function () {
+  const INBOX_URL = 'https://business.facebook.com/latest/inbox/all';
+
+  const cur = () => orders.find(o => o.id === currentEditingOrderId);
+
+  // ดึงข้อความบิลล่าสุด (มี QR) จากฟังก์ชัน WhatsApp เดิม
+  function billText(order) {
+    let url = '';
+    const _open = window.open;
+    window.open = u => { url = u; return null; };
+    try { sendOrderToWhatsApp(order); } finally { window.open = _open; }
+    const q = url.split('?text=')[1];
+    return q ? decodeURIComponent(q) : '';
+  }
+
+  function ensureUI() {
+    if (document.getElementById('chRow')) return;
+    const grid = document.getElementById('editCustomerName').closest('.grid');
+    const row = document.createElement('div');
+    row.id = 'chRow';
+    row.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+    row.innerHTML = `
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1">ຊ່ອງທາງສັ່ງຊື້</label>
+        <select id="editChannel" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <option value="whatsapp">WhatsApp</option>
+          <option value="messenger">Messenger (ເພຈ)</option>
+        </select>
+      </div>
+      <div id="msgNameBox" class="hidden">
+        <label class="block font-semibold text-slate-600 mb-1">ຊື່ລູກຄ້າໃນ Messenger</label>
+        <input type="text" id="editMsgName" placeholder="ຊື່ທີ່ສະແດງໃນແຊັດເພຈ" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+      </div>`;
+    grid.after(row);
+
+    document.getElementById('editChannel').onchange = e => {
+      const o = cur(); if (!o) return;
+      o.channel = e.target.value;
+      sync(); handleAutoSave();
+    };
+    document.getElementById('editMsgName').oninput = e => {
+      const o = cur(); if (!o) return;
+      o.messengerName = e.target.value;
+      handleAutoSave();
+    };
+
+    const waBtn = document.querySelector('button[onclick="sendCurrentOrderToWhatsApp()"]');
+    const b = document.createElement('button');
+    b.id = 'msgSendBtn';
+    b.className = 'hidden bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all items-center gap-1.5 shadow-sm';
+    b.innerHTML = '<i class="fa-brands fa-facebook-messenger text-sm"></i> <span>ສົ່ງບິນ Messenger</span>';
+    b.onclick = sendCurrentToMessenger;
+    waBtn.after(b);
+    b.dataset.wa = '1';
+  }
+
+  function sync() {
+    const o = cur(); if (!o) return;
+    const isMsg = o.channel === 'messenger';
+    document.getElementById('editChannel').value = isMsg ? 'messenger' : 'whatsapp';
+    document.getElementById('editMsgName').value = o.messengerName || '';
+    document.getElementById('msgNameBox').classList.toggle('hidden', !isMsg);
+    const b = document.getElementById('msgSendBtn');
+    b.classList.toggle('hidden', !isMsg);
+    b.classList.toggle('flex', isMsg);
+    const wa = document.querySelector('button[onclick="sendCurrentOrderToWhatsApp()"]');
+    wa.classList.toggle('hidden', isMsg);
+  }
+
+  function sendCurrentToMessenger() {
+    const o = cur(); if (!o) return;
+    o.customerName = document.getElementById('editCustomerName').value;
+    o.address = document.getElementById('editCustomerAddress').value;
+    o.shippingFee = Math.max(0, parseFloat(document.getElementById('editShippingFee').value) || 0);
+    const text = billText(o);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showToast('ກັອບບິນແລ້ວ ໄປວາງໃນແຊັດລູກຄ້າໄດ້ເລີຍ'),
+        () => window.prompt('ກັອບຂໍ້ຄວາມນີ້:', text)
+      );
+    } else {
+      window.prompt('ກັອບຂໍ້ຄວາມນີ້:', text);
+    }
+    window.open(INBOX_URL, '_blank');
+  }
+
+  const _open = openEditModal;
+  openEditModal = function (id) { _open(id); ensureUI(); sync(); };
+
+  // ໜ້າລາຍການ: ສະແດງປ້າຍ Messenger ແທນ "ບໍ່ມີເບີໂທ"
+  const _r = renderOrders;
+  renderOrders = function () {
+    _r();
+    document.querySelectorAll('#orderTableBody tr').forEach(row => {
+      const idEl = row.querySelector('.font-mono');
+      if (!idEl) return;
+      const o = orders.find(x => x.id === idEl.textContent.trim());
+      if (!o || o.channel !== 'messenger') return;
+      const box = row.cells[1] && row.cells[1].lastElementChild;
+      if (!box) return;
+      box.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-medium mt-0.5"><i class="fa-brands fa-facebook-messenger text-xs"></i> ${escapeHtml(o.messengerName || 'Messenger')}</span>`;
+    });
+  };
+
+  // ໜ້າ "ທັກຫາລູກຄ້າ": ເພີ່ມລູກຄ້າ Messenger
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s(n);
+    if (n !== 'contacts') return;
+    const list = document.getElementById('ah-contacts-list');
+    const seen = {};
+    orders.forEach(o => {
+      if (o.channel !== 'messenger') return;
+      const k = (o.messengerName || o.customerName || '').trim();
+      if (!k) return;
+      seen[k] = (seen[k] || 0) + 1;
+    });
+    const keys = Object.keys(seen);
+    if (!keys.length) return;
+    const empty = list.querySelector('.ah-empty');
+    if (empty) empty.remove();
+    list.insertAdjacentHTML('beforeend', keys.map(k =>
+      `<div class="ah-row"><div><div style="font-weight:600">${escapeHtml(k)}</div><div class="ah-muted">Messenger · ${seen[k]} ອໍເດີ</div></div><button class="ah-btn" onclick="window.open('${INBOX_URL}','_blank')">ເປີດ Inbox</button></div>`
+    ).join(''));
+  };
+
+  renderOrders();
+})();
+</script>
 
 </body>
 </html>
