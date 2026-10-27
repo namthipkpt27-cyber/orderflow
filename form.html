@@ -108,7 +108,48 @@
 
             const encodedMessage = encodeURIComponent(m);
             window.open(`https://m.me/61573177659546?text=${encodedMessage}`, '_blank');
+        } // ===== Messenger: คัดลอกข้อความ แล้วเปิดแชตเพจ =====
+        function sendToMessenger() {
+            const name = document.getElementById('customerName').value.trim();
+            const phone = document.getElementById('customerPhone').value.trim();
+            const address = document.getElementById('customerAddress').value.trim();
+
+            if (!name || !phone || !address) {
+                alert('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບຖ້ວນກ່ອນສົ່ງ!');
+                return;
+            }
+
+            const text =
+                `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n` +
+                `--------------------\n` +
+                `👤 ຊື່ລູກຄ້າ: ${name}\n` +
+                `📞 ເບີໂທ: ${phone}\n` +
+                `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: ${address}\n` +
+                `--------------------\n` +
+                `🙏 ຂໍຂອບໃຈເດີ້`;
+
+            const done = () => {
+                alert('ກັອບຂໍ້ຄວາມແລ້ວ! ກົດ OK ແລ້ວ ກົດວາງ (Paste) ໃນແຊັດ ແລະ ກົດສົ່ງ');
+                window.location.href = 'https://m.me/wxter.shop';
+            };
+
+            const fallbackCopy = () => {
+                const t = document.createElement('textarea');
+                t.value = text;
+                document.body.appendChild(t);
+                t.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(t);
+                done();
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done, fallbackCopy);
+            } else {
+                fallbackCopy();
+            }
         }
+
     </script>
 
 </body>
