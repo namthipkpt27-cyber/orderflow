@@ -1744,6 +1744,171 @@ main > section:first-of-type { display: none; }
   };
 })();
 </script>
+<script>
+// ===== ແພັດຊ໌ຄວາມເສຖຍລະພາບ (Stability patch) =====
+(function () {
+  const BACKUP_KEY = 'orderflow_last_backup';
+
+  // 1) ໂຫຼດອໍເດີທັງໝົດ (Supabase ສົ່ງຄືນສູງສຸດ 1000 ແຖວຕໍ່ຄັ້ງ ຕ້ອງໂຫຼດເປັນຫນ້າ)
+  window.__ordersLoaded = false;
+  loadOrders = async function () {
+    window.__ordersLoaded = false;
+    const all = [];
+    const size = 1000;
+    for (let from = 0; ; from += size) {
+      const { data, error } = await db.from('lao_orders').select('data')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, from + size - 1);
+      if (error) { showToast('ໂຫຼດຂໍ້ມູນບໍ່ສໍາເລັດ: ' + error.message); return; }
+      all.push(...data.map(r => r.data));
+      if (data.length < size) break;
+    }
+    orders = all;
+    window.__ordersLoaded = true;
+  };
+
+  // 2) ເລກບິນບໍ່ຊ້ຳ (ເກົ່າສຸ່ມ 4 ຫຼັກ ອາດຊ້ຳແລ້ວທັບອໍເດີເກົ່າ)
+  generateOrderId = function () {
+    let id;
+    do {
+      id = 'ORD-' + (Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2, 4)).toUpperCase();
+    } while (orders.some(o => o.id === id));
+    return id;
+  };
+
+  // 3) ຫ້າມເພີ່ມອໍເດີຖ້າໂຫຼດຂໍ້ມູນບໍ່ສໍາເລັດ (ກັນທັບຂໍ້ມູນເກົ່າ)
+  const _create = createNewOrder;
+  createNewOrder = function () {
+    if (currentUser && !window.__ordersLoaded) {
+      showToast('ໂຫຼດຂໍ້ມູນບໍ່ສໍາເລັດ — ກະລຸນາຣີເຟຣຊໜ້າກ່ອນເພີ່ມອໍເດີ');
+      return;
+    }
+    _create();
+  };
+
+  // 4) ບັນທຶກບໍ່ສໍາເລັດ -> ແຈ້ງເຕືອນ + ລອງໃໝ່ອັດຕະໂນມັດ
+  const pending = new Map();
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:90;background:#f59e0b;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top,0px));display:none';
+  document.body.appendChild(bar);
+
+  function showBar() {
+    if (pending.size) {
+      bar.textContent = '⚠ ຍັງບັນທຶກບໍ່ສໍາເລັດ ' + pending.size + ' ອໍເດີ — ກໍາລັງລອງໃໝ່ (ຢ່າປິດໜ້ານີ້)';
+      bar.style.display = 'block';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
+  const _save = saveOrder;
+  saveOrder = async function (order) {
+    let ok = false;
+    try { ok = await _save(order); }
+    catch (e) { console.error(e); showToast('ບັນທຶກບໍ່ສໍາເລັດ (ເຄືອຂ່າຍມີບັນຫາ)'); }
+    if (ok) pending.delete(order.id); else pending.set(order.id, order);
+    showBar();
+    return ok;
+  };
+
+  async function retryPending() {
+    if (!currentUser || !pending.size) return;
+    for (const [id, o] of [...pending]) {
+      if (!orders.includes(o)) { pending.delete(id); continue; }
+      const ok = await saveOrder(o);
+      if (ok && currentEditingOrderId === id) updateAutoSaveStatus('saved', 'ບັນທຶກແລ້ວ');
+    }
+    showBar();
+  }
+  setInterval(retryPending, 20000);
+  window.addEventListener('online', retryPending);
+
+  // 5) ກັນຂໍ້ມູນຫາຍຕອນປິດໜ້າ / ສະລັບແອັບ
+  window.addEventListener('beforeunload', e => {
+    if (pending.size || autoSaveTimer) { e.preventDefault(); e.returnValue = ''; }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+      executeSave();
+    }
+  });
+
+  // 6) ອໍເດີໃໝ່ທີ່ຍັງບໍ່ກົດ "ສໍາເລັດ" -> ຖາມກ່ອນຍົກເລີກ
+  const _close = closeModal;
+  closeModal = function () {
+    const done = document.getElementById('orderDoneBtn');
+    const isDraft = done && done.style.display !== 'none';
+    if (isDraft && !confirm('ອໍເດີນີ້ຍັງບໍ່ໄດ້ບັນທຶກ. ຕ້ອງການຍົກເລີກ ແລະ ລຶບຂໍ້ມູນທີ່ກອກບໍ?')) return;
+    _close();
+  };
+
+  // 7) ອອກຈາກລະບົບ: ເຕືອນຖ້າຍັງມີຂໍ້ມູນຄ້າງ
+  const _signOut = signOut;
+  signOut = async function () {
+    if (pending.size && !confirm('ຍັງມີອໍເດີທີ່ບັນທຶກບໍ່ສໍາເລັດ. ແນ່ໃຈບໍວ່າຈະອອກ?')) return;
+    pending.clear();
+    showBar();
+    window.__ordersLoaded = false;
+    await _signOut();
+  };
+
+  // 8) ປຸ່ມສໍາຮອງຂໍ້ມູນ (ດາວໂຫຼດ CSV)
+  function cell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+
+  window.exportBackup = function () {
+    if (!window.__ordersLoaded) { showToast('ຂໍ້ມູນຍັງໂຫຼດບໍ່ສໍາເລັດ ສໍາຮອງບໍ່ໄດ້'); return; }
+    if (!orders.length) { showToast('ຍັງບໍ່ມີອໍເດີໃຫ້ສໍາຮອງ'); return; }
+    const rows = [['ເລກບິນ', 'ວັນທີ', 'ສະຖານະ', 'ຊ່ອງທາງ', 'ຊື່ລູກຄ້າ', 'ເບີໂທ', 'ຊື່ Messenger', 'ທີ່ຢູ່', 'ໝາຍເຫດ', 'ຄ່າຈັດສົ່ງ', 'ຄ່າມັດຈໍາ', 'ສິນຄ້າ', 'ຂະໜາດ/ສີ', 'ຈໍານວນ', 'ຕົ້ນທຶນ/ຊິ້ນ', 'ລາຄາຂາຍ/ຊິ້ນ', 'ລິ້ງຮູບ']];
+    orders.forEach(o => {
+      const items = o.items && o.items.length ? o.items : [{}];
+      items.forEach(i => rows.push([o.id, o.createdAt, o.status, o.channel || 'whatsapp', o.customerName, o.customerPhone, o.messengerName, o.address, o.notes, o.shippingFee, o.deposit, i.name, i.variant, i.quantity, i.cost, i.price, i.image]));
+    });
+    const csv = '\ufeff' + rows.map(r => r.map(cell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'orderflow-backup-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    try { localStorage.setItem(BACKUP_KEY, new Date().toISOString()); } catch (e) {}
+    setBackupText();
+  };
+
+  function setBackupText() {
+    const el = document.querySelector('#ah-home .ah-head .ah-muted');
+    if (!el) return;
+    let txt = 'ຍັງບໍ່ເຄີຍສໍາຮອງຂໍ້ມູນ', old = true;
+    try {
+      const d = localStorage.getItem(BACKUP_KEY);
+      if (d) {
+        const days = Math.floor((Date.now() - new Date(d)) / 864e5);
+        old = days > 30;
+        txt = days <= 0 ? 'ສໍາຮອງຄັ້ງລ່າສຸດ: ມື້ນີ້' : 'ສໍາຮອງຄັ້ງລ່າສຸດ: ' + days + ' ມື້ກ່ອນ';
+      }
+    } catch (e) {}
+    el.textContent = txt;
+    el.style.color = old ? '#d97706' : '';
+  }
+
+  const grid = document.querySelector('#appHome .ah-grid');
+  if (grid) {
+    const t = document.createElement('button');
+    t.className = 'ah-tile';
+    t.onclick = () => exportBackup();
+    t.innerHTML = '<div class="ah-ic"><i class="fa-solid fa-download"></i></div>ສໍາຮອງຂໍ້ມູນ';
+    grid.lastElementChild.before(t);
+  }
+
+  const _show = window.ahShow;
+  window.ahShow = function (n) { _show(n); if (n === 'home') setBackupText(); };
+  setBackupText();
+})();
+</script>
 
 </body>
 </html>
