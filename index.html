@@ -1909,6 +1909,139 @@ main > section:first-of-type { display: none; }
   setBackupText();
 })();
 </script>
+<script>
+// ===== ແບ່ງຄ່າສົ່ງອັດຕະໂນມັດ =====
+(function () {
+  const sel = new Set();
+  let showAll = false;
+
+  const pieces = o => Math.max(1, (o.items || []).reduce((s, i) => s + (Number(i.quantity) || 0), 0));
+  const getTotal = () => Number((document.getElementById('sp-total').value || '').replace(/[^0-9]/g, '')) || 0;
+  const visible = () => orders.filter(o => o.status !== 'Cancelled' && (showAll || o.status === 'Arrived'));
+
+  function calc() {
+    const chosen = orders.filter(o => sel.has(o.id));
+    const total = getTotal();
+    const all = chosen.reduce((s, o) => s + pieces(o), 0);
+    const res = {};
+    if (!chosen.length || !total) return { res, all, chosen, total };
+    const step = total >= all * 1000 ? 1000 : 1;
+    let used = 0;
+    chosen.forEach((o, i) => {
+      if (i === chosen.length - 1) res[o.id] = total - used;
+      else {
+        const f = Math.min(Math.round(total * pieces(o) / all / step) * step, total - used);
+        res[o.id] = f;
+        used += f;
+      }
+    });
+    return { res, all, chosen, total };
+  }
+
+  function render() {
+    const list = visible();
+    [...sel].forEach(id => { if (!list.some(o => o.id === id)) sel.delete(id); });
+    const { res, all, chosen, total } = calc();
+    document.getElementById('sp-list').innerHTML = list.length ? list.map(o => {
+      const on = sel.has(o.id);
+      const fee = on && res[o.id] !== undefined ? res[o.id] : (Number(o.shippingFee) || 0);
+      return `<div class="ah-row" data-id="${escapeHtml(o.id)}" style="cursor:pointer;${on ? 'border:2px solid #7c3aed;background:#f5f0ff' : ''}">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <div style="width:22px;height:22px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:13px;color:#fff;border:1.5px solid #cfc3f3;${on ? 'background:#7c3aed;border-color:#7c3aed' : ''}">${on ? '✓' : ''}</div>
+          <div style="min-width:0"><div style="font-weight:600">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div><div class="ah-muted">${escapeHtml(o.id)} · ${pieces(o)} ຊິ້ນ</div></div>
+        </div>
+        <b style="color:#7c3aed;white-space:nowrap">${fee ? '₭ ' + fmt(fee) : '-'}</b>
+      </div>`;
+    }).join('') : '<div class="ah-empty">ບໍ່ມີອໍເດີທີ່ສິນຄ້າມາຮອດແລ້ວ</div>';
+    document.getElementById('sp-info').textContent = chosen.length
+      ? `ເລືອກ ${chosen.length} ອໍເດີ · ${all} ຊິ້ນ` + (total ? ` · ຊິ້ນລະ ~₭ ${fmt(Math.round(total / all))}` : '')
+      : 'ແຕະເລືອກອໍເດີທີ່ມາພ້ອມກັນ';
+  }
+
+  function setMsg(t, bad) {
+    const m = document.getElementById('sp-msg');
+    m.textContent = t;
+    m.style.color = bad ? '#dc2626' : '#7c3aed';
+  }
+
+  const box = document.createElement('div');
+  box.id = 'ah-split';
+  box.style.display = 'none';
+  box.innerHTML = `
+    <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ແບ່ງຄ່າສົ່ງ</h2></div>
+    <div class="ah-row" style="display:block">
+      <div class="ah-muted" style="margin-bottom:6px">ຄ່າສົ່ງລວມ (ກີບ)</div>
+      <input id="sp-total" type="text" inputmode="numeric" placeholder="200,000" style="width:100%;border:1px solid #ece6fb;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;box-sizing:border-box">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
+      <label class="ah-muted" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="sp-all"> ສະແດງທຸກອໍເດີ</label>
+      <button class="ah-btn" id="sp-selall" style="padding:8px 12px">ເລືອກທັງໝົດ</button>
+    </div>
+    <div id="sp-list"></div>
+    <div id="sp-info" class="ah-muted" style="margin:6px 0 12px"></div>
+    <button class="ah-btn" id="sp-save" style="width:100%;padding:14px;font-size:15px">ແບ່ງຄ່າສົ່ງ ແລະ ບັນທຶກ</button>
+    <div id="sp-msg" style="font-size:13px;margin-top:10px;text-align:center"></div>`;
+  document.querySelector('#appHome .wrap').appendChild(box);
+
+  document.getElementById('sp-list').onclick = e => {
+    const r = e.target.closest('[data-id]');
+    if (!r) return;
+    const id = r.dataset.id;
+    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    setMsg('');
+    render();
+  };
+  document.getElementById('sp-total').oninput = e => {
+    const v = e.target.value.replace(/[^0-9]/g, '');
+    e.target.value = v ? Number(v).toLocaleString('en-US') : '';
+    setMsg('');
+    render();
+  };
+  document.getElementById('sp-all').onchange = e => { showAll = e.target.checked; render(); };
+  document.getElementById('sp-selall').onclick = () => {
+    const list = visible();
+    if (list.length && list.every(o => sel.has(o.id))) sel.clear();
+    else list.forEach(o => sel.add(o.id));
+    setMsg('');
+    render();
+  };
+
+  document.getElementById('sp-save').onclick = async () => {
+    const { res, chosen, total } = calc();
+    if (!chosen.length) { setMsg('ເລືອກອໍເດີກ່ອນ', true); return; }
+    if (!total) { setMsg('ໃສ່ຄ່າສົ່ງລວມກ່ອນ', true); return; }
+    if (chosen.some(o => Number(o.shippingFee) > 0) &&
+        !confirm('ບາງອໍເດີມີຄ່າສົ່ງຢູ່ແລ້ວ. ຕ້ອງການທັບດ້ວຍຄ່າໃໝ່ບໍ?')) return;
+    let bad = 0;
+    for (const o of chosen) {
+      o.shippingFee = res[o.id];
+      const ok = await saveOrder(o);
+      if (!ok) bad++;
+    }
+    renderOrders();
+    sel.clear();
+    document.getElementById('sp-total').value = '';
+    render();
+    setMsg(bad ? `ບັນທຶກບໍ່ສໍາເລັດ ${bad} ອໍເດີ — ລະບົບຈະລອງໃໝ່` : `ແບ່ງຄ່າສົ່ງແລ້ວ ${chosen.length} ອໍເດີ`, !!bad);
+  };
+
+  const grid = document.querySelector('#appHome .ah-grid');
+  if (grid) {
+    const t = document.createElement('button');
+    t.className = 'ah-tile';
+    t.onclick = () => ahShow('split');
+    t.innerHTML = '<div class="ah-ic"><i class="fa-solid fa-truck-fast"></i></div>ແບ່ງຄ່າສົ່ງ';
+    grid.lastElementChild.before(t);
+  }
+
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s(n);
+    box.style.display = n === 'split' ? 'block' : 'none';
+    if (n === 'split') { setMsg(''); render(); }
+  };
+})();
+</script>
 
 </body>
 </html>
