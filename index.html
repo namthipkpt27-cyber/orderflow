@@ -2042,6 +2042,73 @@ main > section:first-of-type { display: none; }
   };
 })();
 </script>
+<script>
+// ===== ກອກລາຄາຢວນ -> ແປງເປັນກີບອັດຕະໂນມັດ =====
+(function () {
+  const KEY = 'orderflow_cny_rate';
+  const getRate = () => { try { return Number(localStorage.getItem(KEY)) || 0; } catch (e) { return 0; } };
+  const cur = () => orders.find(o => o.id === currentEditingOrderId);
+
+  function setCost(row, i, kip) {
+    const c = row.querySelector('input[oninput*="cost"]');
+    if (c) c.value = kip;
+    updateItemField(i, 'cost', kip);
+  }
+
+  function ensureRate() {
+    if (document.getElementById('cnyRateBox')) return;
+    const wrap = document.getElementById('modalItemsBody').closest('.overflow-x-auto');
+    const box = document.createElement('div');
+    box.id = 'cnyRateBox';
+    box.className = 'flex flex-wrap items-center gap-2 mb-2 text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2';
+    box.innerHTML = `
+      <span class="font-semibold text-amber-800">ເລດເງິນຢວນ: 1 ¥ =</span>
+      <input type="number" id="cnyRate" min="0" step="any" placeholder="ເຊັ່ນ 3000" class="w-24 px-2 py-1 border border-amber-300 rounded-lg text-right bg-white focus:outline-none">
+      <span class="font-semibold text-amber-800">ກີບ</span>
+      <button type="button" id="cnyRecalc" class="ml-auto bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-lg font-medium">ຄິດໄລ່ໃໝ່ທຸກຊິ້ນ</button>`;
+    wrap.before(box);
+    const inp = box.querySelector('#cnyRate');
+    inp.value = getRate() || '';
+    inp.oninput = () => { try { localStorage.setItem(KEY, inp.value || '0'); } catch (e) {} };
+    box.querySelector('#cnyRecalc').onclick = () => {
+      const o = cur(), r = getRate();
+      if (!o) return;
+      if (!r) { showToast('ໃສ່ເລດເງິນຢວນກ່ອນ'); return; }
+      document.querySelectorAll('#modalItemsBody tr').forEach((row, i) => {
+        const it = o.items[i];
+        if (it && Number(it.cny) > 0) setCost(row, i, Math.round(it.cny * r));
+      });
+    };
+  }
+
+  const _r = renderModalItems;
+  renderModalItems = function (items) {
+    _r(items);
+    ensureRate();
+    const o = cur();
+    if (!o || !o.items) return;
+    document.querySelectorAll('#modalItemsBody tr').forEach((row, i) => {
+      const it = o.items[i];
+      const c = row.querySelector('input[oninput*="cost"]');
+      if (!it || !c || row.querySelector('.cny-input')) return;
+      const y = document.createElement('input');
+      y.type = 'number';
+      y.min = '0';
+      y.step = 'any';
+      y.className = 'cny-input w-24 mt-1 px-2 py-1 border border-dashed border-amber-400 rounded-lg text-right text-[11px] focus:outline-none';
+      y.placeholder = '¥ ຢວນ/ຊິ້ນ';
+      y.value = it.cny || '';
+      y.oninput = () => {
+        it.cny = Math.max(0, parseFloat(y.value) || 0);
+        const r = getRate();
+        if (!r) { showToast('ໃສ່ເລດເງິນຢວນກ່ອນ'); handleAutoSave(); return; }
+        setCost(row, i, Math.round(it.cny * r));
+      };
+      c.parentElement.appendChild(y);
+    });
+  };
+})();
+</script>
 
 </body>
 </html>
