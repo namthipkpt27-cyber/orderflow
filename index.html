@@ -2529,6 +2529,138 @@ main > section:first-of-type { display: none; }
   bk();
 })();
 </script>
+<style>
+/* ===== ก้อน 2: เลือกหลายออเดอร์ แล้วเปลี่ยนสถานะพร้อมกัน ===== */
+#bulkBar{position:fixed;left:0;right:0;bottom:0;z-index:36;background:#fff;border-top:1px solid #dbe5ff;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:none;box-shadow:0 -4px 16px rgba(0,0,0,.08);font-family:'Noto Sans Lao',sans-serif}
+body.bulk-on #bulkBar{display:block}
+body.bulk-on main{padding-bottom:160px}
+#bulkBar .b-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;font-weight:700;color:#1b2142}
+#bulkBar .b-row{display:flex;gap:8px}
+#bulkBar select{flex:1;min-width:0;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:14px;font-family:inherit;background:#fff}
+#bulkBar button{border:0;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+#bulkGo{background:#2563eb;color:#fff}
+#bulkAll,#bulkX{background:#eff6ff;color:#2563eb}
+#bulkMsg{font-size:13px;text-align:center;margin-top:8px;min-height:16px;color:#2563eb}
+.bulk-chk{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:7px;border:2px solid #93c5fd;background:#fff;color:#fff;display:none;place-items:center;font-size:14px;z-index:2}
+body.bulk-on .bulk-chk{display:grid}
+body.bulk-on #orderTableBody tr{position:relative;cursor:pointer}
+tr.bulk-sel{background:#eff6ff!important;outline:2px solid #2563eb;outline-offset:-2px}
+tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
+</style>
+<script>
+// ===== ก้อน 2: เลือกหลายออเดอร์ =====
+(function () {
+  const $ = id => document.getElementById(id);
+  const tbody = $('orderTableBody');
+  const OPT = [['Arrived', 'ສິນຄ້າມາຮອດລາວແລ້ວ'], ['Shipping', 'ຢູ່ລະຫວ່າງຂົນສົ່ງ'], ['Sourcing', 'ກຳລັງສັ່ງຊື້ຈາກຈີນ'], ['Delivered', 'ຈັດສົ່ງໃຫ້ລູກຄ້າແລ້ວ'], ['Completed', 'ສຳເລັດແລ້ວ'], ['Cancelled', 'ຍົກເລີກ']];
+  let on = false;
+  const sel = new Set();
+
+  // ປຸ່ມເປີດໂໝດເລືອກ (ຢູ່ແຖວສະຖານະ)
+  const tb = document.createElement('button');
+  tb.id = 'bulkToggle';
+  tb.type = 'button';
+  tb.className = 'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-600';
+  tb.innerHTML = '<i class="fa-solid fa-square-check"></i> ເລືອກຫຼາຍອໍເດີ';
+  const fbar = $('filter-All').parentElement;
+  fbar.insertBefore(tb, fbar.firstChild);
+
+  // ແຖບດ້ານລຸ່ມ
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="bulkBar">
+      <div class="b-top"><span id="bulkN">ເລືອກແລ້ວ 0 ອໍເດີ</span><button id="bulkAll" type="button">ເລືອກທັງໝົດທີ່ເຫັນ</button></div>
+      <div class="b-row">
+        <select id="bulkSt">${OPT.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
+        <button id="bulkGo" type="button">ປ່ຽນສະຖານະ</button>
+        <button id="bulkX" type="button">ປິດ</button>
+      </div>
+      <div id="bulkMsg"></div>
+    </div>`);
+
+  const rowId = row => { const e = row.querySelector('.font-mono'); return e ? e.textContent.trim() : ''; };
+  const rows = () => [...tbody.querySelectorAll('tr')].filter(r => rowId(r));
+  const msg = (t, bad) => { const m = $('bulkMsg'); m.textContent = t || ''; m.style.color = bad ? '#dc2626' : '#2563eb'; };
+
+  function paint() {
+    rows().forEach(r => {
+      const id = rowId(r);
+      let c = r.querySelector('.bulk-chk');
+      if (!c) { c = document.createElement('span'); c.className = 'bulk-chk'; c.textContent = '✓'; r.appendChild(c); }
+      r.classList.toggle('bulk-sel', sel.has(id));
+    });
+    $('bulkN').textContent = 'ເລືອກແລ້ວ ' + sel.size + ' ອໍເດີ';
+  }
+
+  function setMode(v) {
+    on = v;
+    document.body.classList.toggle('bulk-on', v);
+    if (!v) sel.clear();
+    tb.innerHTML = v ? '<i class="fa-solid fa-xmark"></i> ປິດໂໝດເລືອກ' : '<i class="fa-solid fa-square-check"></i> ເລືອກຫຼາຍອໍເດີ';
+    msg('');
+    paint();
+  }
+
+  tb.onclick = () => setMode(!on);
+  $('bulkX').onclick = () => setMode(false);
+
+  // ແຕະແຖວ = ເລືອກ/ເອົາອອກ (ບໍ່ເປີດຟອມແກ້ໄຂໃນໂໝດນີ້)
+  tbody.addEventListener('click', e => {
+    if (!on) return;
+    const row = e.target.closest('tr');
+    const id = row && rowId(row);
+    if (!id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    msg('');
+    paint();
+  }, true);
+
+  $('bulkAll').onclick = () => {
+    const ids = rows().map(rowId);
+    const all = ids.length && ids.every(id => sel.has(id));
+    ids.forEach(id => { if (all) sel.delete(id); else sel.add(id); });
+    paint();
+  };
+
+  $('bulkGo').onclick = async () => {
+    const ids = [...sel];
+    if (!ids.length) { msg('ແຕະເລືອກອໍເດີກ່ອນ', true); return; }
+    const target = $('bulkSt').value;
+    const label = $('bulkSt').selectedOptions[0].textContent;
+    if (!confirm('ປ່ຽນ ' + ids.length + ' ອໍເດີ ເປັນ "' + label + '" ?')) return;
+    const btn = $('bulkGo');
+    btn.disabled = true;
+    msg('ກຳລັງບັນທຶກ...');
+    let bad = 0;
+    for (const id of ids) {
+      const o = orders.find(x => x.id === id);
+      if (!o) continue;
+      o.status = target;
+      const ok = await saveOrder(o);
+      if (!ok) bad++;
+    }
+    btn.disabled = false;
+    sel.clear();
+    renderOrders();
+    msg(bad ? 'ບັນທຶກບໍ່ສຳເລັດ ' + bad + ' ອໍເດີ — ລະບົບຈະລອງໃໝ່' : 'ປ່ຽນສະຖານະແລ້ວ ' + ids.length + ' ອໍເດີ', !!bad);
+  };
+
+  // ເຊື່ອມກັບລະບົບເດີມ
+  const _r = renderOrders;
+  renderOrders = function () { _r.apply(this, arguments); paint(); };
+
+  if (window.ahShow) {
+    const _s = window.ahShow;
+    window.ahShow = function (n) {
+      if (n !== 'orders' && on) setMode(false);
+      _s.apply(this, arguments);
+    };
+  }
+
+  paint();
+})();
+</script>
 
 </body>
 </html>
