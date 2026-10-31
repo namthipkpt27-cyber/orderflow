@@ -2319,6 +2319,216 @@ main > section:first-of-type { display: none; }
   openEditModal = function (id) { _open(id); ensureUI(); };
 })();
 </script>
+<style>
+/* ===== ก้อน 1: หน้าแรกใหม่ (โทนสีฟ้า) ===== */
+/* อยากเปลี่ยนเป็นสีม่วง: แก้ 5 ค่า --of-* บรรทัดล่างนี้ */
+#appHome{--of-a:#2563eb;--of-a2:#60a5fa;--of-soft:#e8efff;--of-ln:#dbe5ff;--of-bg:#f4f7ff;background:var(--of-bg)!important;padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))!important}
+.bg-indigo-600{background-color:#2563eb!important}
+.hover\:bg-indigo-700:hover{background-color:#1d4ed8!important}
+.text-indigo-600{color:#2563eb!important}
+.bg-indigo-50{background-color:#eff6ff!important}
+.bg-indigo-100{background-color:#dbeafe!important}
+#appHome .ah-btn{background:var(--of-a)}
+#appHome .ah-btn.wa{background:#16a34a}
+#appHome .ah-row{border-color:var(--of-ln)}
+#appHome [style*="border:2px solid #7c3aed"]{border-color:var(--of-a)!important}
+#appHome [style*="background:#f5f0ff"]{background:var(--of-soft)!important}
+#appHome [style*="background:#7c3aed;border-color"]{background:var(--of-a)!important;border-color:var(--of-a)!important}
+#appHome [style^="color:#7c3aed"]{color:var(--of-a)!important}
+
+#ah-home>.ah-head{margin-bottom:0!important;background:linear-gradient(135deg,var(--of-a),var(--of-a2));border-radius:22px;padding:16px 16px 58px;color:#fff}
+#ah-home>.ah-head h2{color:#fff}
+#ah-home>.ah-head .ah-muted{color:#fff!important;opacity:.92}
+#ah-home>.ah-head .ah-ic{background:#fff!important;color:var(--of-a)!important}
+#hm-bell{margin-left:auto;position:relative;width:40px;height:40px;border-radius:50%;border:0;background:#fff;color:var(--of-a);font-size:18px;cursor:pointer;flex:none}
+#hm-bellb{position:absolute;top:-4px;right:-4px;background:#e11d48;color:#fff;font-size:11px;font-weight:600;border-radius:10px;padding:1px 6px;display:none}
+
+#hm-sum{position:relative;background:#fff;border:1px solid var(--of-ln);border-radius:20px;padding:14px;margin:-42px 8px 12px;box-shadow:0 6px 18px rgba(37,99,235,.12)}
+#hm-sum .hm-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700;font-size:14px}
+#hm-eye{width:36px;height:36px;border-radius:50%;border:0;background:var(--of-soft);color:var(--of-a);font-size:16px;cursor:pointer}
+#hm-sum .hm-two{display:flex;gap:12px}
+#hm-sum .hm-two>div{flex:1;min-width:0}
+#hm-sum .hm-lb{font-size:12px;color:#6b7194}
+#hm-sum .hm-big{font-size:19px;font-weight:700;color:var(--of-a);margin-top:2px;white-space:nowrap}
+#hm-sum .hm-mini{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--of-ln)}
+#hm-sum .hm-mini>div{flex:1;min-width:0}
+#hm-sum .hm-mini b{display:block;font-size:14px;margin-top:2px}
+
+#hm-bk{display:none;align-items:center;gap:10px;background:#ffedd5;color:#7c2d12;border-radius:16px;padding:12px;margin:0 8px 12px;font-size:13px}
+#hm-bk span{flex:1}
+#hm-bk button{border:0;background:var(--of-a);color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+
+#hm-search{position:relative;margin:0 8px 12px}
+#hm-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8a90b0;font-size:14px}
+#hm-q{width:100%;box-sizing:border-box;height:46px;padding:0 14px 0 38px;border:1px solid var(--of-ln);border-radius:14px;background:#fff;font-size:15px;font-family:inherit;color:#1b2142}
+#hm-res{margin:0 8px}
+
+#appHome .ah-tile{border:1px solid var(--of-ln);border-radius:18px;padding:16px 8px 24px}
+#appHome .ah-tile::after{content:'\203A';position:absolute;right:10px;bottom:9px;width:22px;height:22px;border-radius:50%;background:var(--of-soft);color:var(--of-a);display:grid;place-items:center;font-size:16px;line-height:1}
+#appHome .ah-ic{background:var(--of-soft);color:var(--of-a)}
+#appHome .ah-badge{background:var(--of-a)}
+#appHome .ah-tile[data-k=orders] .ah-ic{background:#fff1dc;color:#d97706}
+#appHome .ah-tile[data-k=wa] .ah-ic{background:#dcfce7;color:#16a34a}
+#appHome .ah-tile[data-k=arr] .ah-ic{background:#ffedd5;color:#ea580c}
+#appHome .ah-tile[data-k=arr] .ah-badge{background:#e11d48}
+#appHome .ah-tile[data-k=bk] .ah-ic{background:#ede9fe;color:#7c3aed}
+#appHome .ah-tile[data-k=cat] .ah-ic{background:#fce7f3;color:#db2777}
+#appHome .ah-tile[data-k=out]{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px}
+#appHome .ah-tile[data-k=out] .ah-ic{margin:0;width:42px;height:42px;background:#eef0f6;color:#4b5173}
+
+#hm-nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;display:flex;background:#fff;border:1px solid var(--of-ln);border-radius:22px;padding:8px 4px;box-shadow:0 6px 18px rgba(37,99,235,.12);z-index:45}
+#hm-nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-family:inherit;color:#8a90b0;cursor:pointer}
+#hm-nav button i{font-size:20px}
+#hm-nav button.on{color:var(--of-a);font-weight:700}
+</style>
+<script>
+// ===== ก้อน 1: หน้าแรกใหม่ =====
+(function () {
+  const $ = id => document.getElementById(id);
+  const app = $('appHome'), home = $('ah-home');
+  if (!app || !home) return;
+  const grid = home.querySelector('.ah-grid');
+  const head = home.querySelector('.ah-head');
+  const BK_KEY = 'orderflow_last_backup';
+  const ST = { Sourcing: 'ກຳລັງສັ່ງຊື້', Shipping: 'ຂົນສົ່ງ', Arrived: 'ມາຮອດແລ້ວ', Delivered: 'ຈັດສົ່ງແລ້ວ', Completed: 'ສຳເລັດ', Cancelled: 'ຍົກເລີກ' };
+  let eye = false;
+
+  // ປຸ່ມກະດິ່ງ ແລະ ສ່ວນເພີ່ມໃໝ່ໃນໜ້າຫຼັກ
+  head.insertAdjacentHTML('beforeend', '<button id="hm-bell" type="button" aria-label="ແຈ້ງສິນຄ້າມາຮອດ"><i class="fa-solid fa-bell"></i><span id="hm-bellb"></span></button>');
+  head.insertAdjacentHTML('afterend', `
+    <div id="hm-sum">
+      <div class="hm-top"><span>ສະຫຼຸບຍອດ</span><button id="hm-eye" type="button" aria-label="ສະແດງ ຫຼື ເຊື່ອງຕົວເລກ"><i class="fa-solid fa-eye-slash"></i></button></div>
+      <div class="hm-two">
+        <div><div class="hm-lb">ຍອດຂາຍມື້ນີ້</div><div class="hm-big hm-v" id="hm-ts"></div></div>
+        <div><div class="hm-lb">ຍອດຂາຍເດືອນນີ້</div><div class="hm-big hm-v" id="hm-ms"></div></div>
+      </div>
+      <div class="hm-mini">
+        <div><span class="hm-lb">ກຳໄລມື້ນີ້</span><b class="hm-v" id="hm-tp"></b></div>
+        <div><span class="hm-lb">ກຳໄລເດືອນນີ້</span><b class="hm-v" id="hm-mp"></b></div>
+        <div><span class="hm-lb">ອໍເດີໃໝ່ມື້ນີ້</span><b id="hm-tn">0</b></div>
+      </div>
+    </div>
+    <div id="hm-bk"><i class="fa-solid fa-triangle-exclamation"></i><span></span><button id="hm-bkbtn" type="button">ສຳຮອງດຽວນີ້</button></div>
+    <div id="hm-search"><i class="fa-solid fa-magnifying-glass"></i><input id="hm-q" type="search" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ ຫຼື ເລກບິນ"></div>
+    <div id="hm-res" style="display:none"></div>`);
+
+  // ແຖບເມນູລຸ່ມ
+  app.insertAdjacentHTML('beforeend', `
+    <nav id="hm-nav">
+      <button type="button" data-t="home" class="on"><i class="fa-solid fa-house"></i><span>ໜ້າຫຼັກ</span></button>
+      <button type="button" data-t="orders"><i class="fa-solid fa-list"></i><span>ອໍເດີ</span></button>
+      <button type="button" data-t="report"><i class="fa-solid fa-chart-column"></i><span>ລາຍງານ</span></button>
+      <button type="button" data-t="catalog"><i class="fa-solid fa-tags"></i><span>ສິນຄ້າ</span></button>
+    </nav>`);
+  const nav = $('hm-nav');
+
+  // ໃສ່ປ້າຍປະເພດໃຫ້ແຕ່ລະປຸ່ມ (ເພື່ອໃຫ້ສີຕາມປະເພດ)
+  const KIND = { 'fa-box-open': 'orders', 'fa-chart-column': 'sum', 'fa-plus': 'add', 'fa-whatsapp': 'wa', 'fa-bell': 'arr', 'fa-download': 'bk', 'fa-truck-fast': 'ship', 'fa-tags': 'cat', 'fa-right-from-bracket': 'out' };
+  grid.querySelectorAll('.ah-tile').forEach(t => {
+    const i = t.querySelector('i');
+    if (!i) return;
+    for (const c in KIND) if (i.classList.contains(c)) t.dataset.k = KIND[c];
+  });
+
+  // ຄິດໄລ່ຍອດ
+  function stats() {
+    const now = new Date();
+    const dayKey = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    const today = dayKey(now), month = now.getFullYear() * 100 + now.getMonth();
+    const r = { ts: 0, tp: 0, ms: 0, mp: 0, tn: 0 };
+    (orders || []).forEach(o => {
+      if (o.status === 'Cancelled' || !o.createdAt) return;
+      const d = new Date(o.createdAt);
+      if (isNaN(d) || d.getFullYear() * 100 + d.getMonth() !== month) return;
+      const s = calculateOrderSales(o), p = calculateOrderProfit(o);
+      r.ms += s; r.mp += p;
+      if (dayKey(d) === today) { r.ts += s; r.tp += p; r.tn++; }
+    });
+    return r;
+  }
+
+  function refresh() {
+    const s = stats();
+    const money = n => '₭ ' + fmt(n);
+    const prof = n => (n >= 0 ? '+' : '') + '₭ ' + fmt(n);
+    const set = (id, t) => { $(id).textContent = eye ? t : '••••••'; };
+    set('hm-ts', money(s.ts)); set('hm-ms', money(s.ms));
+    set('hm-tp', prof(s.tp)); set('hm-mp', prof(s.mp));
+    $('hm-tn').textContent = s.tn;
+    $('hm-eye').firstElementChild.className = 'fa-solid ' + (eye ? 'fa-eye' : 'fa-eye-slash');
+    const n = (orders || []).filter(o => o.status === 'Arrived').length;
+    const b = $('hm-bellb');
+    b.textContent = n;
+    b.style.display = n ? 'block' : 'none';
+  }
+
+  // ແຈ້ງເຕືອນສຳຮອງຂໍ້ມູນ (ເກີນ 7 ມື້)
+  function bk() {
+    let n = null;
+    try { const d = localStorage.getItem(BK_KEY); if (d) n = Math.floor((Date.now() - new Date(d)) / 864e5); } catch (e) {}
+    const el = $('hm-bk');
+    if (n !== null && n <= 7) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    el.querySelector('span').textContent = n === null ? 'ຍັງບໍ່ເຄີຍສຳຮອງຂໍ້ມູນ' : 'ບໍ່ໄດ້ສຳຮອງຂໍ້ມູນ ' + n + ' ມື້ແລ້ວ';
+  }
+
+  // ຄົ້ນຫາ
+  const q = $('hm-q'), res = $('hm-res');
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toLowerCase();
+    const dg = v.replace(/\D/g, '');
+    if (!v) { res.style.display = 'none'; grid.style.display = ''; bk(); return; }
+    const list = (orders || []).filter(o =>
+      (o.id || '').toLowerCase().includes(v) ||
+      (o.customerName || '').toLowerCase().includes(v) ||
+      (o.messengerName || '').toLowerCase().includes(v) ||
+      (dg.length >= 3 && (o.customerPhone || '').replace(/\D/g, '').includes(dg))
+    ).slice(0, 20);
+    grid.style.display = 'none';
+    $('hm-bk').style.display = 'none';
+    res.style.display = 'block';
+    res.innerHTML = list.length ? list.map(o =>
+      `<div class="ah-row" data-id="${escapeHtml(o.id)}" style="cursor:pointer"><div style="min-width:0"><div style="font-weight:600">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div><div class="ah-muted">${escapeHtml(o.id)}${o.customerPhone ? ' · ' + escapeHtml(o.customerPhone) : ''}</div></div><span style="font-size:12px;color:var(--of-a);background:var(--of-soft);border-radius:8px;padding:3px 8px;white-space:nowrap">${ST[o.status] || ST.Sourcing}</span></div>`
+    ).join('') : '<div class="ah-empty">ບໍ່ພົບອໍເດີ</div>';
+  });
+  res.addEventListener('click', e => {
+    const r = e.target.closest('[data-id]');
+    if (!r) return;
+    ahShow('orders');
+    openEditModal(r.dataset.id);
+  });
+
+  $('hm-eye').onclick = () => { eye = !eye; refresh(); };
+  $('hm-bell').onclick = () => ahShow('arrived');
+  $('hm-bkbtn').onclick = () => exportBackup();
+
+  nav.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const go = { home: 'home', orders: 'orders', report: 'summary', catalog: 'catalog' }[b.dataset.t];
+    if (go) ahShow(go);
+  });
+
+  // ເຊື່ອມກັບລະບົບເດີມ
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    if (n === 'home') { q.value = ''; res.style.display = 'none'; grid.style.display = ''; }
+    _s(n);
+    if (n === 'home') { refresh(); bk(); }
+    const tab = { home: 'home', summary: 'report', catalog: 'catalog' }[n];
+    nav.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+  };
+
+  const _r = renderOrders;
+  renderOrders = function () { _r.apply(this, arguments); refresh(); };
+
+  const _eb = window.exportBackup;
+  if (_eb) window.exportBackup = function () { _eb.apply(this, arguments); setTimeout(bk, 400); };
+
+  refresh();
+  bk();
+})();
+</script>
 
 </body>
 </html>
