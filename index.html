@@ -2661,6 +2661,62 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   paint();
 })();
 </script>
+<script>
+// ===== ຂໍ້ຄວາມແຈ້ງສິນຄ້າມາຮອດ (ມີຍອດທີ່ຕ້ອງໂອນ) =====
+(function () {
+  const FORM_URL = 'https://namthipkpt27-cyber.github.io/orderflow/form.html';
+  const QR_URL = 'https://namthipkpt27-cyber.github.io/orderflow/qr.jpg';
+
+  function buildMsg(o) {
+    const sales = calculateOrderSales(o);
+    const deposit = Math.max(0, Number(o.deposit) || 0);
+    const remaining = Math.max(0, sales - deposit);
+
+    let m = `ສະບາຍດີ ${o.customerName || ''} 🙏\n\n✅ ອໍເດີ #${o.id} ຂອງທ່ານມາຮອດລາວແລ້ວ\n\n`;
+
+    if (remaining > 0) {
+      if (deposit > 0) {
+        m += `💰 ສະຫຼຸບຍອດ:\nຄ່າສິນຄ້າ: ₭ ${fmt(sales)}\nຫັກຄ່າມັດຈຳແລ້ວ: -₭ ${fmt(deposit)}\n━━━━━━━━\nຍອດທີ່ຕ້ອງໂອນ: ₭ ${fmt(remaining)}\n\n`;
+      } else {
+        m += `💰 ຍອດທີ່ຕ້ອງໂອນ: ₭ ${fmt(remaining)}\n\n`;
+      }
+    } else {
+      m += `✅ ຊຳລະຄົບແລ້ວ ບໍ່ຕ້ອງໂອນເພີ່ມ\n\n`;
+    }
+
+    m += `ກະລຸນາເຮັດຕາມຂັ້ນຕອນ:\n\n1️⃣ ກອກທີ່ຢູ່ຈັດສົ່ງ:\n${FORM_URL}\n\n`;
+
+    if (remaining > 0) {
+      m += `2️⃣ ຊຳລະເງິນ (ສະແກນ QR):\n${QR_URL}\n\n`;
+      m += `ຈາກນັ້ນສົ່ງສະລິບໂອນເງິນມາໃນແຊັດນີ້ໄດ້ເລີຍ. ເມື່ອໄດ້ຮັບແລ້ວ ພວກເຮົາຈະຈັດສົ່ງໃຫ້ທັນທີ.\n\n`;
+    } else {
+      m += `ເມື່ອໄດ້ຮັບທີ່ຢູ່ແລ້ວ ພວກເຮົາຈະຈັດສົ່ງໃຫ້ທັນທີ.\n\n`;
+    }
+
+    m += `ຂອບໃຈຫຼາຍໆ 🙏`;
+    return m;
+  }
+
+  window.ahNotify = function (id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const ph = formatWhatsAppPhone(o.customerPhone);
+    window.open('https://wa.me/' + (ph || '') + '?text=' + encodeURIComponent(buildMsg(o)), '_blank');
+  };
+
+  window.ahCopy = async function (id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const t = buildMsg(o);
+    try {
+      await navigator.clipboard.writeText(t);
+      showToast('ກັອບຂໍ້ຄວາມແລ້ວ ໄປວາງໃນ Messenger ໄດ້ເລີຍ');
+    } catch (e) {
+      window.prompt('ກັອບຂໍ້ຄວາມນີ້:', t);
+    }
+  };
+})();
+</script>
 
 </body>
 </html>
