@@ -2717,6 +2717,217 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   };
 })();
 </script>
+```html
+<script>
+// ===== ແບ່ງຄ່າສົ່ງ ແບບເລືອກເປັນຊິ້ນ (ແທນໜ້າແບ່ງຄ່າສົ່ງເກົ່າ) =====
+(function () {
+  const $ = id => document.getElementById(id);
+  const wrap = document.querySelector('#appHome .wrap');
+  if (!wrap) return;
+
+  const sel = new Set();   // 'orderId|index'
+  const open = new Set();  // orderId ທີ່ຂະຫຍາຍຢູ່
+  let showAll = false, query = '';
+
+  const qty = i => Math.max(1, Number(i.quantity) || 0);
+  const key = (id, idx) => id + '|' + idx;
+  const getTotal = () => Number(($('sp2-total').value || '').replace(/[^0-9]/g, '')) || 0;
+
+  function visible() {
+    const s = query.trim().toLowerCase();
+    return orders.filter(o => {
+      if (o.status === 'Cancelled') return false;
+      if (s) {
+        return (o.id || '').toLowerCase().includes(s) ||
+          (o.customerName || '').toLowerCase().includes(s) ||
+          (o.messengerName || '').toLowerCase().includes(s);
+      }
+      return showAll || o.status === 'Arrived';
+    });
+  }
+
+  function chosenItems() {
+    const out = [];
+    orders.forEach(o => (o.items || []).forEach((it, idx) => {
+      if (sel.has(key(o.id, idx))) out.push({ o: o, it: it, idx: idx, w: qty(it) });
+    }));
+    return out;
+  }
+
+  function calc() {
+    const list = chosenItems();
+    const total = getTotal();
+    const all = list.reduce((s, x) => s + x.w, 0);
+    const fee = {};
+    if (!list.length || !total) return { list, all, total, fee };
+    const step = total >= all * 1000 ? 1000 : 1;
+    let used = 0;
+    list.forEach((x, n) => {
+      let f;
+      if (n === list.length - 1) f = total - used;
+      else {
+        f = Math.min(Math.round(total * x.w / all / step) * step, total - used);
+        used += f;
+      }
+      fee[key(x.o.id, x.idx)] = f;
+    });
+    return { list, all, total, fee };
+  }
+
+  function msg(t, bad) {
+    const m = $('sp2-msg');
+    m.textContent = t || '';
+    m.style.color = bad ? '#dc2626' : '#2563eb';
+  }
+
+  function render() {
+    const list = visible();
+    const ids = new Set(list.map(o => o.id));
+    [...sel].forEach(k => { if (!ids.has(k.slice(0, k.lastIndexOf('|')))) sel.delete(k); });
+
+    const c = calc();
+    $('sp2-list').innerHTML = list.length ? list.map(o => {
+      const items = o.items || [];
+      const oid = escapeHtml(o.id);
+      const n = items.filter((_, i) => sel.has(key(o.id, i))).length;
+      const isOpen = open.has(o.id);
+      const shipNote = Number(o.shippingFee) > 0 ? ' · ຄ່າສົ່ງ ₭ ' + fmt(o.shippingFee) : '';
+
+      let body = '';
+      if (isOpen) {
+        body = '<div style="margin-top:10px;border-top:1px solid #dbe5ff;padding-top:8px">' +
+          `<button class="ah-btn" data-all="${oid}" style="padding:7px 12px;margin-bottom:8px;font-size:12px">ເລືອກທຸກຊິ້ນທີ່ຍັງບໍ່ແບ່ງ</button>` +
+          items.map((it, i) => {
+            const k = key(o.id, i);
+            const on = sel.has(k);
+            const done = Number(it.shipFee) > 0;
+            const f = on && c.fee[k] !== undefined ? c.fee[k] : (done ? Number(it.shipFee) : 0);
+            return `<div data-item="${oid}|${i}" style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:12px;cursor:pointer;${on ? 'background:#fff;' : ''}${done && !on ? 'opacity:.6;' : ''}">
+              <div style="width:22px;height:22px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:13px;color:#fff;border:1.5px solid #93c5fd;${on ? 'background:#2563eb;border-color:#2563eb;' : ''}">${on ? '✓' : ''}</div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:14px">${escapeHtml(it.name || '-')}${it.variant ? ' <span class="ah-muted">(' + escapeHtml(it.variant) + ')</span>' : ''}</div>
+                <div class="ah-muted">x${Number(it.quantity) || 0}${done && !on ? ' · ແບ່ງຄ່າສົ່ງແລ້ວ' : ''}</div>
+              </div>
+              <b style="color:#2563eb;white-space:nowrap;font-size:13px">${f ? '₭ ' + fmt(f) : '-'}</b>
+            </div>`;
+          }).join('') + '</div>';
+      }
+
+      return `<div class="ah-row" style="display:block;${n ? 'border:2px solid #2563eb;background:#e8efff;' : ''}">
+        <div data-tog="${oid}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer">
+          <div style="min-width:0">
+            <div style="font-weight:600">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div>
+            <div class="ah-muted">${oid} · ${items.length} ລາຍການ${n ? ' · ເລືອກ ' + n : ''}${shipNote}</div>
+          </div>
+          <span style="color:#2563eb;font-size:20px">${isOpen ? '▴' : '▾'}</span>
+        </div>${body}
+      </div>`;
+    }).join('') : '<div class="ah-empty">ບໍ່ພົບອໍເດີ (ລອງຕິກ "ສະແດງທຸກອໍເດີ")</div>';
+
+    $('sp2-info').textContent = c.list.length
+      ? 'ເລືອກ ' + c.list.length + ' ລາຍການ · ' + c.all + ' ຊິ້ນ' + (c.total ? ' · ຊິ້ນລະ ~₭ ' + fmt(Math.round(c.total / c.all)) : '')
+      : 'ແຕະອໍເດີ ແລ້ວແຕະຕິກສິນຄ້າທີ່ມາຮອດແລ້ວ';
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'ah-split2';
+  panel.style.display = 'none';
+  panel.innerHTML = `
+    <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ແບ່ງຄ່າສົ່ງ</h2></div>
+    <div class="ah-row" style="display:block">
+      <div class="ah-muted" style="margin-bottom:6px">ຄ່າສົ່ງລວມຂອງລອດນີ້ (ກີບ)</div>
+      <input id="sp2-total" type="text" inputmode="numeric" placeholder="200,000" style="width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;box-sizing:border-box">
+    </div>
+    <input id="sp2-q" type="search" placeholder="ຄົ້ນຫາຊື່ ຫຼື ເລກບິນ" style="width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;box-sizing:border-box;margin-bottom:10px;background:#fff">
+    <label class="ah-muted" style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><input type="checkbox" id="sp2-all"> ສະແດງທຸກອໍເດີ (ບໍ່ສະເພາະ "ມາຮອດແລ້ວ")</label>
+    <div id="sp2-list"></div>
+    <div id="sp2-info" class="ah-muted" style="margin:6px 0 12px"></div>
+    <button class="ah-btn" id="sp2-save" style="width:100%;padding:14px;font-size:15px">ແບ່ງຄ່າສົ່ງ ແລະ ບັນທຶກ</button>
+    <div id="sp2-msg" style="font-size:13px;margin-top:10px;text-align:center"></div>`;
+  wrap.appendChild(panel);
+
+  $('sp2-list').onclick = e => {
+    const all = e.target.closest('[data-all]');
+    if (all) {
+      const id = all.dataset.all;
+      const o = orders.find(x => x.id === id);
+      if (o) (o.items || []).forEach((it, i) => { if (!(Number(it.shipFee) > 0)) sel.add(key(id, i)); });
+      msg('');
+      render();
+      return;
+    }
+    const it = e.target.closest('[data-item]');
+    if (it) {
+      const k = it.dataset.item;
+      if (sel.has(k)) sel.delete(k); else sel.add(k);
+      msg('');
+      render();
+      return;
+    }
+    const tg = e.target.closest('[data-tog]');
+    if (tg) {
+      const id = tg.dataset.tog;
+      if (open.has(id)) open.delete(id); else open.add(id);
+      render();
+    }
+  };
+
+  $('sp2-total').oninput = e => {
+    const v = e.target.value.replace(/[^0-9]/g, '');
+    e.target.value = v ? Number(v).toLocaleString('en-US') : '';
+    msg('');
+    render();
+  };
+  $('sp2-q').oninput = e => { query = e.target.value; render(); };
+  $('sp2-all').onchange = e => { showAll = e.target.checked; render(); };
+
+  $('sp2-save').onclick = async () => {
+    const c = calc();
+    if (!c.list.length) { msg('ເລືອກສິນຄ້າກ່ອນ', true); return; }
+    if (!c.total) { msg('ໃສ່ຄ່າສົ່ງລວມກ່ອນ', true); return; }
+    if (c.list.some(x => Number(x.it.shipFee) > 0) &&
+        !confirm('ບາງຊິ້ນແບ່ງຄ່າສົ່ງແລ້ວ. ຕ້ອງການທັບດ້ວຍຄ່າໃໝ່ບໍ?')) return;
+
+    const btn = $('sp2-save');
+    btn.disabled = true;
+    msg('ກຳລັງບັນທຶກ...');
+
+    // ຄ່າສົ່ງຂອງອໍເດີ = ຄ່າເກົ່າ + ສ່ວນທີ່ປ່ຽນ (ບໍ່ທັບຄ່າສົ່ງຂອງຊິ້ນອື່ນ)
+    const touched = new Map();
+    c.list.forEach(x => {
+      const nf = c.fee[key(x.o.id, x.idx)] || 0;
+      const delta = nf - (Number(x.it.shipFee) || 0);
+      x.o.shippingFee = Math.max(0, (Number(x.o.shippingFee) || 0) + delta);
+      x.it.shipFee = nf;
+      touched.set(x.o.id, x.o);
+    });
+
+    let bad = 0;
+    for (const o of touched.values()) {
+      const ok = await saveOrder(o);
+      if (!ok) bad++;
+    }
+    btn.disabled = false;
+    const n = c.list.length;
+    sel.clear();
+    $('sp2-total').value = '';
+    renderOrders();
+    render();
+    msg(bad ? 'ບັນທຶກບໍ່ສຳເລັດ ' + bad + ' ອໍເດີ — ລະບົບຈະລອງໃໝ່' : 'ແບ່ງຄ່າສົ່ງແລ້ວ ' + n + ' ລາຍການ', !!bad);
+  };
+
+  // ເຊື່ອມກັບລະບົບເດີມ: ແທນທີ່ໜ້າແບ່ງຄ່າສົ່ງເກົ່າ
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s.apply(this, arguments);
+    const old = $('ah-split');
+    if (old) old.style.display = 'none';
+    panel.style.display = n === 'split' ? 'block' : 'none';
+    if (n === 'split') { msg(''); render(); }
+  };
+})();
+</script>
+```
 
 </body>
 </html>
