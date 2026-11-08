@@ -2928,6 +2928,20 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
 })();
 </script>
 ```
+<script>
+(function () {
+  var N = 'Wxter.shop';
+  document.title = N;
+  var h = document.querySelector('#ah-home .ah-head h2');
+  if (h) h.textContent = N;
+  var h1 = document.querySelector('header h1');
+  if (h1) h1.textContent = N;
+  var m = document.createElement('meta');
+  m.name = 'apple-mobile-web-app-title';
+  m.content = N;
+  document.head.appendChild(m);
+})();
+</script>
 
 </body>
 </html>
