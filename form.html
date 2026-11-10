@@ -1,156 +1,89 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="lo">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ຟໍາມຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao', sans-serif; }
-    </style>
+    <style>body { font-family: 'Noto Sans Lao', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h2 class="text-xl font-bold text-gray-800 text-center mb-1">📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</h2>
-        <p class="text-sm text-gray-500 text-center mb-6">ກະລຸນາຕື່ມຂໍ້ມູນຂອງທ່ານໃຫ້ຄົບຖ້ວນ ເພື່ອຄວາມສະດວກໃນການຈັດສົ່ງ</p>
+        <div id="formBox">
+            <h2 class="text-xl font-bold text-gray-800 text-center mb-1">📦 ຂໍ້ມູນການຈັດສົ່ງສິນຄ້າ</h2>
+            <p id="orderTag" class="text-sm text-blue-600 text-center font-semibold mb-1"></p>
+            <p class="text-sm text-gray-500 text-center mb-6">ກະລຸນາຕື່ມຂໍ້ມູນຂອງທ່ານໃຫ້ຄົບຖ້ວນ ເພື່ອຄວາມສະດວກໃນການຈັດສົ່ງ</p>
 
-        <form id="orderForm" class="space-y-4">
-            <!-- ຊື່ລູກຄ້າ -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ຊື່ ແລະ ນາມສະກຸນ (ຊື່ລູກຄ້າ)</label>
-                <input type="text" id="customerName" required 
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ ຂອງທ່ານ...">
-            </div>
-
-            <!-- ເບີໂທ -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">📞 ເບີໂທລະສັບ (ຕິດຕໍ່)</label>
-                <input type="tel" id="customerPhone" required 
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="ຕົວຢ່າງ: 20xxxxxxxx">
-            </div>
-
-            <!-- ທີ່ຢູ່ ແລະ ສາຂາຂົນສົ່ງ -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">📍 ທີ່ຢູ່ຈັດສົ່ງ / ສາຂາຂົນສົ່ງ</label>
-                <textarea id="customerAddress" rows="3" required 
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="ລະບຸ ບ້ານ, ເມືອງ, ແຂວງ ຫຼື ຂົນສົ່ງ (ອານຸສິດ, ຮຸ່ງອາລຸນ [HAL], ມີໄຊ)..."></textarea>
-            </div>
-
-            <div style="margin-top: 20px; display: flex; gap: 10px; flex-direction: column;">
-                <button type="button" onclick="sendToWhatsApp()" style="background-color: #25D366; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                    📤 ສົ່ງຂໍ້ມູນເຂົ້າ WhatsApp
+            <form id="orderForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ຊື່ ແລະ ນາມສະກຸນ</label>
+                    <input type="text" id="customerName" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ ຂອງທ່ານ...">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">📞 ເບີໂທລະສັບ</label>
+                    <input type="tel" id="customerPhone" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="ຕົວຢ່າງ: 20xxxxxxxx">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">📍 ທີ່ຢູ່ຈັດສົ່ງ / ສາຂາຂົນສົ່ງ</label>
+                    <textarea id="customerAddress" rows="3" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="ລະບຸ ບ້ານ, ເມືອງ, ແຂວງ ຫຼື ຂົນສົ່ງ (ອານຸສິດ, ຮຸ່ງອາລຸນ [HAL], ມີໄຊ)..."></textarea>
+                </div>
+                <p id="errMsg" class="text-sm text-red-600 hidden"></p>
+                <button type="submit" id="submitBtn"
+                    style="background-color:#2563eb;color:white;padding:12px;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;width:100%">
+                    ສົ່ງຂໍ້ມູນ
                 </button>
-                
-                <button type="button" onclick="sendToMessenger()" style="background-color: #0084FF; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                    📤 ສົ່ງຂໍ້ມູນເຂົ້າ Facebook Messenger
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <div id="doneBox" class="hidden text-center py-6">
+            <div class="text-5xl mb-3">✅</div>
+            <h2 class="text-lg font-bold text-gray-800 mb-1">ສົ່ງຂໍ້ມູນສຳເລັດແລ້ວ</h2>
+            <p class="text-sm text-gray-500">ຂອບໃຈຫຼາຍໆ 🙏 ພວກເຮົາໄດ້ຮັບທີ່ຢູ່ຂອງທ່ານແລ້ວ</p>
+        </div>
     </div>
 
     <script>
-        function formatWhatsAppPhone(phone) {
-            if (!phone) return '';
-            let cleaned = phone.replace(/\D/g, '');
-            if (cleaned.startsWith('0')) {
-                cleaned = '856' + cleaned.substring(1);
-            } else if (!cleaned.startsWith('856') && cleaned.length >= 8) {
-                cleaned = '856' + cleaned;
-            }
-            return cleaned;
-        }
+        const SUPABASE_URL = 'https://tcdrbajzopirxtkfhtsp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_5bkb2MakZLOKOPnyO2lTWQ_yexhHX4G';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function sendToWhatsApp() {
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-            const address = document.getElementById('customerAddress').value.trim();
+        const orderId = (new URLSearchParams(location.search).get('o') || '').trim();
+        if (orderId) document.getElementById('orderTag').textContent = 'ອໍເດີ #' + orderId;
 
-            if (!name || !phone || !address) {
-                alert('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ครบຖ້ວນກ่อนສົ່ງເด้อ!');
+        document.getElementById('orderForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const err = document.getElementById('errMsg');
+            err.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = 'ກຳລັງສົ່ງ...';
+
+            const { error } = await db.from('address_forms').insert({
+                order_id: orderId || 'unknown',
+                customer_name: document.getElementById('customerName').value.trim(),
+                phone: document.getElementById('customerPhone').value.trim(),
+                address: document.getElementById('customerAddress').value.trim()
+            });
+
+            if (error) {
+                err.textContent = 'ສົ່ງບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ';
+                err.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'ສົ່ງຂໍ້ມູນ';
                 return;
             }
-
-            let m = `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n`;
-            m += `--------------------\n`;
-            m += `👤 ຊື່ລູກຄ້າ: *${name}*\n`;
-            m += `📞 ເບີໂທ: *${phone}*\n`;
-            m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: *${address}*\n`;
-            m += `--------------------\n`;
-            m += `🙏 ຂໍຂອບໃຈເດີ້!`;
-
-            const encodedMessage = encodeURIComponent(m);
-            const shopWhatsApp = '8562078624949';
-            window.open(`https://wa.me/${shopWhatsApp}?text=${encodedMessage}`, '_blank');
-        }
-
-        function sendToMessenger() {
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-            const address = document.getElementById('customerAddress').value.trim();
-
-            if (!name || !phone || !address) {
-                alert('ກະລຸນາຕື່ມຂໍ້ມູນให้ครบຖ້ວນກ่อนส่งເด้อ!');
-                return;
-            }
-
-            let m = `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n`;
-            m += `--------------------\n`;
-            m += `👤 ຊື່ລູກຄ້າ: *${name}*\n`;
-            m += `📞 ເບີໂທ: *${phone}*\n`;
-            m += `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: *${address}*\n`;
-            m += `--------------------\n`;
-            m += `🙏 ຂໍຂອບໃຈເດີ້`;
-
-            const encodedMessage = encodeURIComponent(m);
-            window.open(`https://m.me/61573177659546?text=${encodedMessage}`, '_blank');
-        } // ===== Messenger: คัดลอกข้อความ แล้วเปิดแชตเพจ =====
-        function sendToMessenger() {
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-            const address = document.getElementById('customerAddress').value.trim();
-
-            if (!name || !phone || !address) {
-                alert('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບຖ້ວນກ່ອນສົ່ງ!');
-                return;
-            }
-
-            const text =
-                `🛒 ລູກຄ້າແຈ້ງຂໍ້ມູນການຈັດສົ່ງ\n` +
-                `--------------------\n` +
-                `👤 ຊື່ລູກຄ້າ: ${name}\n` +
-                `📞 ເບີໂທ: ${phone}\n` +
-                `📍 ທີ່ຢູ່ / ສາຂາຂົນສົ່ງ: ${address}\n` +
-                `--------------------\n` +
-                `🙏 ຂໍຂອບໃຈເດີ້`;
-
-            const done = () => {
-                alert('ກັອບຂໍ້ຄວາມແລ້ວ! ກົດ OK ແລ້ວ ກົດວາງ (Paste) ໃນແຊັດ ແລະ ກົດສົ່ງ');
-                window.location.href = 'https://m.me/wxter.shop';
-            };
-
-            const fallbackCopy = () => {
-                const t = document.createElement('textarea');
-                t.value = text;
-                document.body.appendChild(t);
-                t.select();
-                try { document.execCommand('copy'); } catch (e) {}
-                document.body.removeChild(t);
-                done();
-            };
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(done, fallbackCopy);
-            } else {
-                fallbackCopy();
-            }
-        }
-
+            document.getElementById('formBox').classList.add('hidden');
+            document.getElementById('doneBox').classList.remove('hidden');
+        });
     </script>
-
 </body>
 </html>
