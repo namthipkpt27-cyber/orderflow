@@ -75,7 +75,8 @@
             });
 
             if (error) {
-                err.textContent = 'ສົ່ງບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ';
+                err.textContent = 'ສົ່ງບໍ່ສຳເລັດ: ' + (error.message || error.code);
+
                 err.classList.remove('hidden');
                 btn.disabled = false;
                 btn.textContent = 'ສົ່ງຂໍ້ມູນ';
