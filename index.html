@@ -3040,6 +3040,106 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   setInterval(syncAddresses, 60000);
 })();
 </script>
+<script>
+// ===== ປຸ່ມ "ທີ່ຢູ່ຂົນສົ່ງ" + ໜ້າລາຍການທີ່ຢູ່ແຕ່ລະອໍເດີ =====
+(function () {
+  const $ = id => document.getElementById(id);
+  const wrap = document.querySelector('#appHome .wrap');
+  const grid = document.querySelector('#appHome .ah-grid');
+  if (!wrap || !grid) return;
+
+  let query = '';
+  let showEmpty = false;
+
+  const panel = document.createElement('div');
+  panel.id = 'ah-addr';
+  panel.style.display = 'none';
+  panel.innerHTML = `
+    <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ທີ່ຢູ່ຂົນສົ່ງ</h2></div>
+    <input id="ad-q" type="search" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ ຫຼື ເລກບິນ" style="width:100%;box-sizing:border-box;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;background:#fff;margin-bottom:10px">
+    <label class="ah-muted" style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><input type="checkbox" id="ad-empty"> ສະແດງອໍເດີທີ່ຍັງບໍ່ມີທີ່ຢູ່ນຳ</label>
+    <div id="ad-info" class="ah-muted" style="margin-bottom:8px"></div>
+    <div id="ad-list"></div>`;
+  wrap.appendChild(panel);
+
+  function list() {
+    const s = query.trim().toLowerCase();
+    const dg = s.replace(/\D/g, '');
+    return orders.filter(o => {
+      if (o.status === 'Cancelled') return false;
+      const has = !!(o.address && o.address.trim());
+      if (!has && !showEmpty) return false;
+      if (!s) return true;
+      return (o.id || '').toLowerCase().includes(s) ||
+        (o.customerName || '').toLowerCase().includes(s) ||
+        (o.messengerName || '').toLowerCase().includes(s) ||
+        (dg.length >= 3 && (o.customerPhone || '').replace(/\D/g, '').includes(dg));
+    });
+  }
+
+  function render() {
+    const rows = list();
+    $('ad-info').textContent = rows.length + ' ອໍເດີ';
+    $('ad-list').innerHTML = rows.length ? rows.map(o => {
+      const id = escapeHtml(o.id);
+      const has = !!(o.address && o.address.trim());
+      return `<div class="ah-row" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-weight:600;min-width:0">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div>
+          <span class="ah-muted" style="white-space:nowrap">${id}</span>
+        </div>
+        ${o.customerPhone ? `<div class="ah-muted" style="margin-bottom:6px">${escapeHtml(o.customerPhone)}</div>` : ''}
+        <div style="font-size:14px;white-space:pre-wrap;word-break:break-word;margin-bottom:10px;${has ? '' : 'color:#7d7599'}">${has ? escapeHtml(o.address) : 'ຍັງບໍ່ມີທີ່ຢູ່ຂົນສົ່ງ'}</div>
+        <div style="display:flex;gap:8px">
+          ${has ? `<button class="ah-btn" data-copy="${id}" style="padding:8px 12px;font-size:13px">ຄັດລອກ</button>` : ''}
+          <button class="ah-btn" data-edit="${id}" style="padding:8px 12px;font-size:13px;background:#eff6ff;color:#2563eb">ແກ້ໄຂອໍເດີ</button>
+        </div>
+      </div>`;
+    }).join('') : '<div class="ah-empty">ຍັງບໍ່ມີທີ່ຢູ່ຂົນສົ່ງ</div>';
+  }
+
+  $('ad-q').oninput = e => { query = e.target.value; render(); };
+  $('ad-empty').onchange = e => { showEmpty = e.target.checked; render(); };
+
+  $('ad-list').addEventListener('click', async e => {
+    const c = e.target.closest('[data-copy]');
+    const ed = e.target.closest('[data-edit]');
+    if (c) {
+      const o = orders.find(x => x.id === c.dataset.copy);
+      if (!o) return;
+      const t = [o.customerName, o.customerPhone, o.address].filter(Boolean).join('\n');
+      try { await navigator.clipboard.writeText(t); showToast('ຄັດລອກທີ່ຢູ່ແລ້ວ'); }
+      catch (err) { window.prompt('ຄັດລອກຂໍ້ຄວາມນີ້:', t); }
+    } else if (ed) {
+      ahShow('orders');
+      openEditModal(ed.dataset.edit);
+    }
+  });
+
+  // ເພີ່ມການ໌ດໃນໜ້າຫຼັກ (ກ່ອນປຸ່ມອອກຈາກລະບົບ)
+  const t = document.createElement('button');
+  t.className = 'ah-tile';
+  t.dataset.k = 'addr';
+  t.onclick = () => ahShow('addr');
+  t.innerHTML = '<div class="ah-ic" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-location-dot"></i></div>ທີ່ຢູ່ຂົນສົ່ງ';
+  grid.lastElementChild.before(t);
+
+  // ເຊື່ອມກັບລະບົບເດີມ
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s.apply(this, arguments);
+    panel.style.display = n === 'addr' ? 'block' : 'none';
+    if (n === 'addr') { query = ''; $('ad-q').value = ''; render(); }
+  };
+
+  // ອັບເດດອັດຕະໂນມັດເມື່ອມີທີ່ຢູ່ໃໝ່ເຂົ້າມາ
+  const _r = renderOrders;
+  renderOrders = function () {
+    _r.apply(this, arguments);
+    if (panel.style.display === 'block') render();
+  };
+})();
+</script>
 
 </body>
 </html>
