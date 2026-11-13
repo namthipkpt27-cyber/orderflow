@@ -3041,69 +3041,98 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
 })();
 </script>
 <script>
-// ===== ປຸ່ມ "ທີ່ຢູ່ຂົນສົ່ງ" + ໜ້າລາຍການທີ່ຢູ່ແຕ່ລະອໍເດີ =====
+// ===== ທີ່ຢູ່ຂົນສົ່ງ: ແຍກ WhatsApp/Messenger + ປະຫວັດຈັດສົ່ງແລ້ວ =====
 (function () {
   const $ = id => document.getElementById(id);
   const wrap = document.querySelector('#appHome .wrap');
   const grid = document.querySelector('#appHome .ah-grid');
   if (!wrap || !grid) return;
 
-  let query = '';
-  let showEmpty = false;
+  let ch = 'whatsapp', tab = 'active', query = '', showEmpty = false;
+
+  const isMsg = o => o.channel === 'messenger';
+  const isDone = o => o.status === 'Delivered' || o.status === 'Completed';
+  const hasAddr = o => !!(o.address && o.address.trim());
 
   const panel = document.createElement('div');
   panel.id = 'ah-addr';
-  panel.style.display = 'none';
+  panel.style.cssText = 'display:none;padding-bottom:110px';
   panel.innerHTML = `
     <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ທີ່ຢູ່ຂົນສົ່ງ</h2></div>
+    <div id="ad-ch" style="display:flex;gap:8px;margin-bottom:8px"></div>
+    <div id="ad-tab" style="display:flex;gap:8px;margin-bottom:10px"></div>
     <input id="ad-q" type="search" placeholder="ຄົ້ນຫາຊື່, ເບີໂທ ຫຼື ເລກບິນ" style="width:100%;box-sizing:border-box;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;background:#fff;margin-bottom:10px">
     <label class="ah-muted" style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><input type="checkbox" id="ad-empty"> ສະແດງອໍເດີທີ່ຍັງບໍ່ມີທີ່ຢູ່ນຳ</label>
     <div id="ad-info" class="ah-muted" style="margin-bottom:8px"></div>
     <div id="ad-list"></div>`;
   wrap.appendChild(panel);
 
-  function list() {
+  function match(o, c) {
+    if (o.status === 'Cancelled') return false;
+    if (c && (isMsg(o) ? 'messenger' : 'whatsapp') !== c) return false;
+    if ((tab === 'done') !== isDone(o)) return false;
+    if (!hasAddr(o) && !showEmpty) return false;
     const s = query.trim().toLowerCase();
+    if (!s) return true;
     const dg = s.replace(/\D/g, '');
-    return orders.filter(o => {
-      if (o.status === 'Cancelled') return false;
-      const has = !!(o.address && o.address.trim());
-      if (!has && !showEmpty) return false;
-      if (!s) return true;
-      return (o.id || '').toLowerCase().includes(s) ||
-        (o.customerName || '').toLowerCase().includes(s) ||
-        (o.messengerName || '').toLowerCase().includes(s) ||
-        (dg.length >= 3 && (o.customerPhone || '').replace(/\D/g, '').includes(dg));
-    });
+    return (o.id || '').toLowerCase().includes(s) ||
+      (o.customerName || '').toLowerCase().includes(s) ||
+      (o.messengerName || '').toLowerCase().includes(s) ||
+      (dg.length >= 3 && (o.customerPhone || '').replace(/\D/g, '').includes(dg));
   }
 
+  const seg = (attr, val, label, on) =>
+    `<button type="button" data-${attr}="${val}" style="flex:1;border:0;border-radius:10px;padding:9px 6px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;${on ? 'background:#2563eb;color:#fff' : 'background:#eff6ff;color:#2563eb'}">${label}</button>`;
+
   function render() {
-    const rows = list();
+    const nW = orders.filter(o => match(o, 'whatsapp')).length;
+    const nM = orders.filter(o => match(o, 'messenger')).length;
+    $('ad-ch').innerHTML =
+      seg('ch', 'whatsapp', 'WhatsApp (' + nW + ')', ch === 'whatsapp') +
+      seg('ch', 'messenger', 'Messenger (' + nM + ')', ch === 'messenger');
+    $('ad-tab').innerHTML =
+      seg('tab', 'active', 'ຍັງບໍ່ຈັດສົ່ງ', tab === 'active') +
+      seg('tab', 'done', 'ຈັດສົ່ງແລ້ວ (ປະຫວັດ)', tab === 'done');
+
+    const rows = orders.filter(o => match(o, ch));
     $('ad-info').textContent = rows.length + ' ອໍເດີ';
     $('ad-list').innerHTML = rows.length ? rows.map(o => {
       const id = escapeHtml(o.id);
-      const has = !!(o.address && o.address.trim());
+      const has = hasAddr(o);
+      const sub = isMsg(o)
+        ? (o.messengerName ? 'Messenger: ' + escapeHtml(o.messengerName) : '')
+        : (o.customerPhone ? escapeHtml(o.customerPhone) : '');
       return `<div class="ah-row" style="display:block">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
           <div style="font-weight:600;min-width:0">${escapeHtml(o.customerName || 'ບໍ່ລະບຸຊື່')}</div>
           <span class="ah-muted" style="white-space:nowrap">${id}</span>
         </div>
-        ${o.customerPhone ? `<div class="ah-muted" style="margin-bottom:6px">${escapeHtml(o.customerPhone)}</div>` : ''}
+        ${sub ? `<div class="ah-muted" style="margin-bottom:6px">${sub}</div>` : ''}
         <div style="font-size:14px;white-space:pre-wrap;word-break:break-word;margin-bottom:10px;${has ? '' : 'color:#7d7599'}">${has ? escapeHtml(o.address) : 'ຍັງບໍ່ມີທີ່ຢູ່ຂົນສົ່ງ'}</div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${has ? `<button class="ah-btn" data-copy="${id}" style="padding:8px 12px;font-size:13px">ຄັດລອກ</button>` : ''}
+          ${isDone(o)
+            ? `<button class="ah-btn" data-back="${id}" style="padding:8px 12px;font-size:13px;background:#fef3c7;color:#b45309">ຍ້າຍກັບ</button>`
+            : `<button class="ah-btn" data-done="${id}" style="padding:8px 12px;font-size:13px;background:#dcfce7;color:#16a34a">ຈັດສົ່ງແລ້ວ</button>`}
           <button class="ah-btn" data-edit="${id}" style="padding:8px 12px;font-size:13px;background:#eff6ff;color:#2563eb">ແກ້ໄຂອໍເດີ</button>
         </div>
       </div>`;
-    }).join('') : '<div class="ah-empty">ຍັງບໍ່ມີທີ່ຢູ່ຂົນສົ່ງ</div>';
+    }).join('') : '<div class="ah-empty">ບໍ່ມີອໍເດີໃນໝວດນີ້</div>';
   }
 
   $('ad-q').oninput = e => { query = e.target.value; render(); };
   $('ad-empty').onchange = e => { showEmpty = e.target.checked; render(); };
 
-  $('ad-list').addEventListener('click', async e => {
+  panel.addEventListener('click', async e => {
+    const bc = e.target.closest('[data-ch]');
+    const bt = e.target.closest('[data-tab]');
+    if (bc) { ch = bc.dataset.ch; render(); return; }
+    if (bt) { tab = bt.dataset.tab; render(); return; }
+
     const c = e.target.closest('[data-copy]');
     const ed = e.target.closest('[data-edit]');
+    const dn = e.target.closest('[data-done]');
+    const bk = e.target.closest('[data-back]');
     if (c) {
       const o = orders.find(x => x.id === c.dataset.copy);
       if (!o) return;
@@ -3113,10 +3142,17 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
     } else if (ed) {
       ahShow('orders');
       openEditModal(ed.dataset.edit);
+    } else if (dn || bk) {
+      const o = orders.find(x => x.id === (dn || bk).dataset[dn ? 'done' : 'back']);
+      if (!o) return;
+      o.status = dn ? 'Delivered' : 'Arrived';
+      await saveOrder(o);
+      renderOrders();
+      render();
     }
   });
 
-  // ເພີ່ມການ໌ດໃນໜ້າຫຼັກ (ກ່ອນປຸ່ມອອກຈາກລະບົບ)
+  // ການ໌ດໃນໜ້າຫຼັກ
   const t = document.createElement('button');
   t.className = 'ah-tile';
   t.dataset.k = 'addr';
@@ -3124,7 +3160,6 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   t.innerHTML = '<div class="ah-ic" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-location-dot"></i></div>ທີ່ຢູ່ຂົນສົ່ງ';
   grid.lastElementChild.before(t);
 
-  // ເຊື່ອມກັບລະບົບເດີມ
   const _s = window.ahShow;
   window.ahShow = function (n) {
     _s.apply(this, arguments);
@@ -3132,7 +3167,6 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
     if (n === 'addr') { query = ''; $('ad-q').value = ''; render(); }
   };
 
-  // ອັບເດດອັດຕະໂນມັດເມື່ອມີທີ່ຢູ່ໃໝ່ເຂົ້າມາ
   const _r = renderOrders;
   renderOrders = function () {
     _r.apply(this, arguments);
@@ -3140,6 +3174,7 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   };
 })();
 </script>
+
 
 </body>
 </html>
