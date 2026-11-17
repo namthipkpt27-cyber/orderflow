@@ -3196,13 +3196,35 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   function go(d) { idx = (idx + d + list.length) % list.length; show(); }
   function close() { lb.style.display = 'none'; $('lbImg').src = ''; }
 
-  // แตะรูปในการ์ดออเดอร์
   $('orderTableBody').addEventListener('click', e => {
     const im = e.target.closest('img');
     if (!im || document.body.classList.contains('bulk-on')) return;
     const row = im.closest('tr');
-    const idEl
+    const idEl = row && row.querySelector('.font-mono');
+    const o = idEl && orders.find(x => x.id === idEl.textContent.trim());
+    if (!o) return;
+    list = (o.items || []).map(i => i.image).filter(Boolean);
+    if (!list.length) return;
+    idx = Math.max(0, list.indexOf(im.src));
+    e.preventDefault();
+    e.stopPropagation();
+    show();
+  }, true);
 
+  $('lbX').onclick = close;
+  $('lbPrev').onclick = () => go(-1);
+  $('lbNext').onclick = () => go(1);
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+
+  lb.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', e => {
+    if (x0 === null || list.length < 2) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  });
+})();
+</script>
 
 </body>
 </html>
