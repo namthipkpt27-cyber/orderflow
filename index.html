@@ -3174,6 +3174,34 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   };
 })();
 </script>
+<div id="lb" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.95);align-items:center;justify-content:center">
+  <img id="lbImg" alt="" style="max-width:100vw;max-height:85vh;object-fit:contain">
+  <button id="lbX" type="button" style="position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:14px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:22px">✕</button>
+  <button id="lbPrev" type="button" style="position:absolute;left:8px;top:50%;width:44px;height:44px;margin-top:-22px;border:0;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:26px">‹</button>
+  <button id="lbNext" type="button" style="position:absolute;right:8px;top:50%;width:44px;height:44px;margin-top:-22px;border:0;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:26px">›</button>
+  <div id="lbCount" style="position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#fff;font-size:14px"></div>
+</div>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const lb = $('lb');
+  let list = [], idx = 0, x0 = null;
+
+  function show() {
+    $('lbImg').src = list[idx];
+    $('lbCount').textContent = list.length > 1 ? (idx + 1) + ' / ' + list.length : '';
+    $('lbPrev').style.display = $('lbNext').style.display = list.length > 1 ? '' : 'none';
+    lb.style.display = 'flex';
+  }
+  function go(d) { idx = (idx + d + list.length) % list.length; show(); }
+  function close() { lb.style.display = 'none'; $('lbImg').src = ''; }
+
+  // แตะรูปในการ์ดออเดอร์
+  $('orderTableBody').addEventListener('click', e => {
+    const im = e.target.closest('img');
+    if (!im || document.body.classList.contains('bulk-on')) return;
+    const row = im.closest('tr');
+    const idEl
 
 
 </body>
