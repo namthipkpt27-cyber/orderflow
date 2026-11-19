@@ -3226,7 +3226,7 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
 })();
 </script>
 <script>
-// ===== ສິນຄ້າພ້ອມສົ່ງ (ສະຕັອກ) =====
+// ===== ສິນຄ້າພ້ອມສົ່ງ (ສະຕັອກ) + ເລືອກຕອນຈົດອໍເດີ =====
 (function () {
   const $ = id => document.getElementById(id);
   const SID = '__stock__', BUCKET = 'order-images';
@@ -3235,6 +3235,7 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   if (!wrap || !grid) return;
   let stock = [];
   const num = v => Math.max(0, parseFloat(v) || 0);
+  const cur = () => orders.find(o => o.id === currentEditingOrderId);
   const inp = 'width:90px;text-align:right;border:1px solid #dbe5ff;border-radius:8px;padding:5px;font-size:13px;font-family:inherit';
   const box = 'width:100%;box-sizing:border-box;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;margin-bottom:8px';
 
@@ -3267,6 +3268,9 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
     if (error) { showToast('ບັນທຶກບໍ່ສຳເລັດ: ' + error.message); return false; }
     return true;
   }
+
+  let timer = null;
+  function saveSoon() { clearTimeout(timer); timer = setTimeout(save, 600); }
 
   function resizeImg(file) {
     return new Promise((ok, no) => {
@@ -3380,6 +3384,131 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
     _s.apply(this, arguments);
     panel.style.display = n === 'stock' ? 'block' : 'none';
     if (n === 'stock') { msg(''); render(); }
+  };
+
+  // ---------- ເລືອກສິນຄ້າພ້ອມສົ່ງ ຕອນຈົດອໍເດີ ----------
+  function adjust(stockId, delta) {
+    if (!delta) return;
+    const s = stock.find(x => x.id === stockId);
+    if (!s) return;
+    s.qty = Math.max(0, num(s.qty) + delta);
+    render();
+    renderPicker();
+    saveSoon();
+  }
+
+  function restore(order) {
+    (order.items || []).forEach(it => {
+      if (it.stockId) adjust(it.stockId, Number(it.quantity) || 0);
+    });
+  }
+
+  function renderPicker() {
+    const g = $('stkGrid');
+    if (!g) return;
+    g.innerHTML = stock.length ? stock.map((s, i) => {
+      const q = num(s.qty);
+      return `<div data-i="${i}" style="background:#fff;border:1px solid #dbe5ff;border-radius:12px;overflow:hidden;cursor:pointer;${q ? '' : 'opacity:.45'}">
+        ${s.image
+          ? `<img src="${escapeHtml(s.image)}" loading="lazy" style="width:100%;height:80px;object-fit:cover;display:block">`
+          : `<div style="height:80px;background:#e8efff;color:#2563eb;display:grid;place-items:center;font-size:22px"><i class="fa-solid fa-box"></i></div>`}
+        <div style="padding:6px 8px">
+          <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)}</div>
+          <div style="font-size:12px;color:#2563eb">₭ ${fmt(num(s.price))}</div>
+          <div style="font-size:11px;color:${q ? '#059669' : '#dc2626'}">${q ? 'ເຫຼືອ ' + q : 'ໝົດສະຕັອກ'}</div>
+        </div></div>`;
+    }).join('') : '<div style="grid-column:1/-1;text-align:center;font-size:12px;color:#94a3b8;padding:12px">ຍັງບໍ່ມີສິນຄ້າພ້ອມສົ່ງ</div>';
+  }
+
+  function ensureUI() {
+    if ($('stkBox')) return;
+    const head = document.querySelector('button[onclick="addOrderItem()"]').parentElement;
+    const bx = document.createElement('div');
+    bx.id = 'stkBox';
+    bx.className = 'mb-2';
+    bx.innerHTML = `
+      <button type="button" id="stkBtn" class="w-full text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold px-3 py-2 rounded-lg transition-all">
+        <i class="fa-solid fa-warehouse"></i> ເລືອກຈາກສິນຄ້າພ້ອມສົ່ງ
+      </button>
+      <div id="stkPanel" style="display:none;margin-top:8px">
+        <div id="stkMsg" style="font-size:12px;color:#2563eb;min-height:16px;margin-bottom:4px"></div>
+        <div id="stkGrid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:260px;overflow-y:auto"></div>
+      </div>`;
+    head.after(bx);
+
+    $('stkBtn').onclick = () => {
+      const p = $('stkPanel');
+      p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      renderPicker();
+    };
+
+    $('stkGrid').onclick = e => {
+      const c = e.target.closest('[data-i]');
+      const o = cur();
+      if (!c || !o) return;
+      const s = stock[Number(c.dataset.i)];
+      if (!s) return;
+      if (num(s.qty) <= 0) { $('stkMsg').textContent = 'ສິນຄ້ານີ້ໝົດສະຕັອກແລ້ວ'; return; }
+
+      const ex = o.items.find(it => it.stockId === s.id);
+      if (ex) {
+        ex.quantity = (Number(ex.quantity) || 0) + 1;
+      } else {
+        const item = { id: Date.now(), name: s.name, quantity: 1, cost: num(s.cost), price: num(s.price), stockId: s.id };
+        if (s.image) item.image = s.image;
+        o.items.push(item);
+      }
+      s.qty = num(s.qty) - 1;
+      renderModalItems(o.items);
+      handleAutoSave();
+      render();
+      renderPicker();
+      saveSoon();
+      $('stkMsg').textContent = 'ເພີ່ມແລ້ວ: ' + s.name;
+    };
+  }
+
+  const _u = updateItemField;
+  updateItemField = function (index, key) {
+    const o = cur();
+    const it = o && o.items[index];
+    const before = it && it.stockId && key === 'quantity' ? (Number(it.quantity) || 0) : null;
+    _u.apply(this, arguments);
+    if (before !== null) adjust(it.stockId, before - (Number(it.quantity) || 0));
+  };
+
+  const _rm = removeOrderItem;
+  removeOrderItem = function (index) {
+    const o = cur();
+    const it = o && o.items[index];
+    const sid = it && it.stockId;
+    const q = it ? (Number(it.quantity) || 0) : 0;
+    _rm.apply(this, arguments);
+    if (sid) adjust(sid, q);
+  };
+
+  const _del = confirmDeleteOrder;
+  confirmDeleteOrder = function () {
+    const o = orders.find(x => x.id === pendingDeleteOrderId);
+    _del.apply(this, arguments);
+    if (o && !orders.includes(o)) restore(o);
+  };
+
+  const _close = closeModal;
+  closeModal = function () {
+    const o = cur();
+    const done = $('orderDoneBtn');
+    const isDraft = done && done.style.display !== 'none';
+    _close.apply(this, arguments);
+    if (isDraft && o && !orders.includes(o)) restore(o);
+  };
+
+  const _open = openEditModal;
+  openEditModal = function (id) {
+    _open.apply(this, arguments);
+    ensureUI();
+    renderPicker();
+    if ($('stkMsg')) $('stkMsg').textContent = '';
   };
 })();
 </script>
