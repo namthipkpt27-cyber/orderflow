@@ -3225,6 +3225,164 @@ tr.bulk-sel .bulk-chk{background:#2563eb;border-color:#2563eb}
   });
 })();
 </script>
+<script>
+// ===== ສິນຄ້າພ້ອມສົ່ງ (ສະຕັອກ) =====
+(function () {
+  const $ = id => document.getElementById(id);
+  const SID = '__stock__', BUCKET = 'order-images';
+  const wrap = document.querySelector('#appHome .wrap');
+  const grid = document.querySelector('#appHome .ah-grid');
+  if (!wrap || !grid) return;
+  let stock = [];
+  const num = v => Math.max(0, parseFloat(v) || 0);
+  const inp = 'width:90px;text-align:right;border:1px solid #dbe5ff;border-radius:8px;padding:5px;font-size:13px;font-family:inherit';
+  const box = 'width:100%;box-sizing:border-box;border:1px solid #dbe5ff;border-radius:12px;padding:10px;font-size:16px;font-family:inherit;margin-bottom:8px';
+
+  const panel = document.createElement('div');
+  panel.id = 'ah-stock';
+  panel.style.cssText = 'display:none;padding-bottom:110px';
+  panel.innerHTML = `
+    <div class="ah-head"><button class="ah-back" onclick="ahShow('home')">‹</button><h2>ສິນຄ້າພ້ອມສົ່ງ</h2></div>
+    <div id="st-sum" class="ah-row" style="display:block"></div>
+    <div class="ah-row" style="display:block">
+      <div class="ah-muted" style="margin-bottom:6px">ເພີ່ມສິນຄ້າພ້ອມສົ່ງ</div>
+      <input id="st-name" type="text" placeholder="ຊື່ສິນຄ້າ" style="${box}">
+      <input id="st-price" type="number" min="0" placeholder="ລາຄາຂາຍ (ກີບ)" style="${box}">
+      <input id="st-cost" type="number" min="0" placeholder="ລາຄາຕົ້ນທຶນ (ກີບ)" style="${box}">
+      <input id="st-qty" type="number" min="0" placeholder="ຈຳນວນໃນສະຕັອກ" style="${box}">
+      <button class="ah-btn" id="st-add" style="width:100%;padding:12px">ເພີ່ມສິນຄ້າ</button>
+      <div id="st-msg" style="font-size:13px;margin-top:8px;min-height:16px"></div>
+    </div>
+    <div class="ah-muted" style="margin:0 2px 8px">ແຕະຮູບ ເພື່ອເພີ່ມ ຫຼື ປ່ຽນຮູບສິນຄ້າ</div>
+    <div id="st-list" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"></div>`;
+  wrap.appendChild(panel);
+
+  function msg(t, bad) { const m = $('st-msg'); m.textContent = t || ''; m.style.color = bad ? '#dc2626' : '#2563eb'; }
+
+  async function save() {
+    if (!currentUser || !db) return false;
+    const { error } = await db.from('lao_orders').upsert(
+      { id: SID, user_id: currentUser.id, data: { id: SID, items: stock } },
+      { onConflict: 'user_id,id' });
+    if (error) { showToast('ບັນທຶກບໍ່ສຳເລັດ: ' + error.message); return false; }
+    return true;
+  }
+
+  function resizeImg(file) {
+    return new Promise((ok, no) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const s = Math.min(1, 800 / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        cv.toBlob(b => b ? ok(b) : no(new Error('resize')), 'image/jpeg', 0.8);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); no(new Error('read')); };
+      img.src = url;
+    });
+  }
+
+  const field = (lb, f, i, v) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px"><span class="ah-muted">${lb}</span><input type="number" min="0" value="${num(v)}" data-f="${f}" data-i="${i}" style="${inp}"></div>`;
+
+  function render() {
+    const pcs = stock.reduce((s, x) => s + num(x.qty), 0);
+    const cost = stock.reduce((s, x) => s + num(x.qty) * num(x.cost), 0);
+    const sales = stock.reduce((s, x) => s + num(x.qty) * num(x.price), 0);
+    $('st-sum').innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="ah-muted">ສິນຄ້າໃນສະຕັອກ</span><b>${fmt(pcs)} ຊິ້ນ</b></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="ah-muted">ຕົ້ນທຶນລວມ</span><b style="color:#d97706">₭ ${fmt(cost)}</b></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span class="ah-muted">ກຳໄລຄາດວ່າຈະໄດ້</span><b style="color:#059669">₭ ${fmt(sales - cost)}</b></div>`;
+    $('st-list').innerHTML = stock.length ? stock.map((x, i) => {
+      const p = num(x.price) - num(x.cost);
+      return `<div style="background:#fff;border:1px solid #dbe5ff;border-radius:16px;overflow:hidden">
+        <label style="display:block;cursor:pointer">
+          ${x.image
+            ? `<img src="${escapeHtml(x.image)}" loading="lazy" style="width:100%;height:110px;object-fit:cover;display:block">`
+            : `<div style="height:110px;background:#e8efff;color:#2563eb;display:grid;place-items:center;font-size:26px"><i class="fa-solid fa-camera"></i></div>`}
+          <input type="file" accept="image/*" data-img="${i}" style="display:none">
+        </label>
+        <div style="padding:8px 10px">
+          <div style="font-weight:600;font-size:14px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(x.name)}</div>
+          ${field('ລາຄາຂາຍ', 'price', i, x.price)}
+          ${field('ຕົ້ນທຶນ', 'cost', i, x.cost)}
+          ${field('ຈຳນວນ', 'qty', i, x.qty)}
+          <div style="font-size:12px;margin:6px 0;color:${p >= 0 ? '#059669' : '#dc2626'}">ກຳໄລ/ຊິ້ນ: ₭ ${fmt(p)}</div>
+          <button class="ah-btn" data-del="${i}" style="background:#ef4444;padding:6px 10px;font-size:12px;width:100%">ລຶບ</button>
+        </div></div>`;
+    }).join('') : '<div class="ah-empty" style="grid-column:1/-1">ຍັງບໍ່ມີສິນຄ້າພ້ອມສົ່ງ</div>';
+  }
+
+  $('st-add').onclick = async () => {
+    if (!window.__ordersLoaded) { msg('ຂໍ້ມູນຍັງໂຫຼດບໍ່ສຳເລັດ ກະລຸນາຣີເຟຣຊໜ້າ', true); return; }
+    const name = $('st-name').value.trim();
+    if (!name) { msg('ໃສ່ຊື່ສິນຄ້າກ່ອນ', true); return; }
+    stock.push({ id: Date.now(), name: name, price: num($('st-price').value), cost: num($('st-cost').value), qty: num($('st-qty').value), image: '' });
+    ['st-name', 'st-price', 'st-cost', 'st-qty'].forEach(k => { $(k).value = ''; });
+    render();
+    msg((await save()) ? 'ບັນທຶກແລ້ວ' : 'ບັນທຶກບໍ່ສຳເລັດ', false);
+  };
+
+  $('st-list').addEventListener('change', async e => {
+    const t = e.target;
+    if (t.dataset.f) {
+      const x = stock[Number(t.dataset.i)];
+      if (!x) return;
+      x[t.dataset.f] = num(t.value);
+      render();
+      msg((await save()) ? 'ອັບເດດແລ້ວ' : 'ບັນທຶກບໍ່ສຳເລັດ', false);
+    } else if (t.dataset.img !== undefined) {
+      const f = t.files && t.files[0], x = stock[Number(t.dataset.img)];
+      t.value = '';
+      if (!f || !x || !currentUser) return;
+      msg('ກຳລັງອັບໂຫຼດຮູບ...', false);
+      try {
+        const blob = await resizeImg(f);
+        const path = currentUser.id + '/stock/' + Date.now() + '.jpg';
+        const up = await db.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' });
+        if (up.error) throw up.error;
+        x.image = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+        render();
+        msg((await save()) ? 'ບັນທຶກຮູບແລ້ວ' : 'ບັນທຶກບໍ່ສຳເລັດ', false);
+      } catch (err) { msg('ອັບໂຫຼດຮູບບໍ່ສຳເລັດ', true); }
+    }
+  });
+
+  $('st-list').addEventListener('click', async e => {
+    const b = e.target.closest('[data-del]');
+    if (!b) return;
+    const x = stock[Number(b.dataset.del)];
+    if (!x || !confirm('ລຶບ "' + x.name + '" ອອກຈາກສະຕັອກ?')) return;
+    stock.splice(Number(b.dataset.del), 1);
+    render();
+    msg((await save()) ? 'ລຶບແລ້ວ' : 'ບັນທຶກບໍ່ສຳເລັດ', false);
+  });
+
+  const t = document.createElement('button');
+  t.className = 'ah-tile';
+  t.onclick = () => ahShow('stock');
+  t.innerHTML = '<div class="ah-ic" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-warehouse"></i></div>ສິນຄ້າພ້ອມສົ່ງ';
+  grid.lastElementChild.before(t);
+
+  const _lo = loadOrders;
+  loadOrders = async function () {
+    stock = [];
+    await _lo.apply(this, arguments);
+    const i = orders.findIndex(o => o.id === SID);
+    if (i >= 0) { stock = orders[i].items || []; orders.splice(i, 1); }
+    if (panel.style.display === 'block') render();
+  };
+
+  const _s = window.ahShow;
+  window.ahShow = function (n) {
+    _s.apply(this, arguments);
+    panel.style.display = n === 'stock' ? 'block' : 'none';
+    if (n === 'stock') { msg(''); render(); }
+  };
+})();
+</script>
 
 </body>
 </html>
